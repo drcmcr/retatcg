@@ -1,0 +1,16 @@
+{
+  "name": "@reta/torneo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lógica de torneo: puntuación, desempates, emparejamientos, puntos de rango y medallas. Funciones puras, sin dependencias de UI ni base de datos.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
