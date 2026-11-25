@@ -7,10 +7,12 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:core": "esbuild src/index.ts --bundle --format=esm --target=es2022 --outfile=../../supabase/functions/core/engine.js --banner:js=\"// Generado desde packages/torneo con npm run build:core. No editar a mano.\""
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^5"
   }
 }
