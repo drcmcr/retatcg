@@ -47,6 +47,7 @@ export default async function Inicio() {
           <div className="btns" style={{ width: "100%" }}>
             <Link href="/torneos" className="btn p n4">Ver torneos</Link>
             <Link href="/unirse" className="btn g">Tengo código</Link>
+            <Link href="/guia" className="link" style={{ textAlign: "center" }}>¿Primera vez? Lee la guía</Link>
           </div>
         </Empty>
       ) : (

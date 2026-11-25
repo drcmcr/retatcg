@@ -36,7 +36,7 @@ export default async function Plataforma() {
             <div key={t.id} className="box card n4 col" style={{ gap: 6 }}>
               <b>{t.name}</b>
               <span className="xs">{CATEGORY[t.category]?.label} · {(t.organizer as unknown as { username: string } | null)?.username} · {fmtDateTime(t.starts_at)} · {t.capacity} lugares</span>
-              <div className="row" style={{ gap: 8 }}>
+              <div className="row wrap" style={{ gap: 8 }}>
                 <ActionButton className="btn p sm" action={() => approveTournament(t.id, true)} ok="Aprobado.">Aprobar</ActionButton>
                 <ActionButton className="btn g sm" action={() => approveTournament(t.id, false)} ok="Regresado a borrador.">Rechazar</ActionButton>
               </div>
@@ -52,7 +52,7 @@ export default async function Plataforma() {
             <div key={r.id} className="box card n4 col" style={{ gap: 6 }}>
               <b>{(r.target as unknown as { username: string } | null)?.username ?? "Usuario"} · {r.kind.replace("_", " ")}</b>
               {r.detail && <span className="xs">{r.detail}</span>}
-              <div className="row" style={{ gap: 8 }}>
+              <div className="row wrap" style={{ gap: 8 }}>
                 {r.target_user && <ActionButton className="btn s sm" action={() => moderateRename(r.target_user!)} ok="Usuario renombrado.">Renombrar</ActionButton>}
                 <ActionButton className="btn g sm" action={() => handleModReport(r.id, "resolved")} ok="Resuelto.">Resuelto</ActionButton>
                 <ActionButton className="btn g sm" action={() => handleModReport(r.id, "dismissed")} ok="Descartado.">Descartar</ActionButton>

@@ -16,6 +16,7 @@ export default async function Listo() {
             <HunterCard d={{ userId: me.id, username: me.username, pr: me.pr, medals: me.medals, titleMedal: null, titleForm: null, season: me.season?.id }} />
           </div>
           <Link href="/instalar" className="btn p">Siguiente: avisos</Link>
+          <Link href="/guia" className="btn g">Cómo funciona Reta (guía)</Link>
           <Link href="/inicio" className="btn s">Ir a inicio</Link>
         </div>
       </div>

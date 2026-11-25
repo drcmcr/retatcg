@@ -36,7 +36,7 @@ export default async function Caso({ params }: { params: Promise<{ id: string; c
     <>
       <LiveRefresh channel={`caso-staff-${c.id}`} watch={[{ table: "case_messages", filter: `case_id=eq.${c.id}` }, { table: "cases", filter: `id=eq.${c.id}` }]} />
       <Link href={`/staff/torneo/${t.id}/casos`} className="link" style={{ padding: 0 }}>← Casos</Link>
-      <div className="row between"><h1 className="t1">#{c.id} · {KIND[c.kind]}</h1><span className={`pill ${c.status === "resolved" ? "o" : "c"}`}>{c.status === "resolved" ? "Resuelto" : c.status === "review" ? "En revisión" : "Abierto"}</span></div>
+      <div className="row between wrap"><h1 className="t1">#{c.id} · {KIND[c.kind]}</h1><span className={`pill ${c.status === "resolved" ? "o" : "c"}`}>{c.status === "resolved" ? "Resuelto" : c.status === "review" ? "En revisión" : "Abierto"}</span></div>
       {m && <span className="sm">Mesa {m.table_no} · ronda {round?.number} · {regName(byId.get(m.a))} vs {regName(byId.get(m.b ?? ""))} · estado {m.status}{m.reported_by ? ` · reportó ${regName(byId.get(m.reported_by))}: ${m.games_a}-${m.games_b}` : ""}</span>}
       <div className="grid2">
         <div className="col" style={{ gap: 12 }}>

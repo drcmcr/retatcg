@@ -27,7 +27,7 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
   const n = (s: string) => list.filter((t) => t.status === s).length;
   return (
     <>
-      <div className="row between">
+      <div className="row between wrap">
         <h1 className="t1">Mis torneos</h1>
         {me.isOrganizer && <Link href="/staff/crear" className="btn p sm"><Icon name="plus" size={18} />Crear torneo</Link>}
       </div>
@@ -40,19 +40,19 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
       {filtered.length === 0 ? (
         <Empty icon="trophy" title="Aún no tienes torneos">{me.isOrganizer && <Link className="btn p" href="/staff/crear">Crear el primero</Link>}</Empty>
       ) : (
-        <table className="tbl" style={{ fontSize: 15 }}>
+        <table className="tbl stack" style={{ fontSize: 15 }}>
           <thead><tr><th>Torneo</th><th>Estado</th><th>Ritmo</th><th>Fecha</th><th className="r">Jugadores</th><th></th></tr></thead>
           <tbody>
             {filtered.map((t) => {
               const [label, pill] = STATUS[t.status]!;
               return (
                 <tr key={t.id}>
-                  <td style={{ fontWeight: 700 }}>{t.name}<div className="xs">{CATEGORY[t.category]?.label}</div></td>
-                  <td><span className={`pill ${pill}`}>{label}{t.status === "running" ? ` · R${t.current_round}` : ""}</span></td>
-                  <td>{PACE_LABEL[t.pace.kind]}</td>
-                  <td className="nw">{fmtDateTime(t.starts_at)}</td>
-                  <td className="r mono">{counts.get(t.id) ?? 0} / {t.capacity}</td>
-                  <td className="r"><Link className="link" style={{ padding: 0 }} href={`/staff/torneo/${t.id}`}>{t.status === "running" ? "Abrir panel" : "Abrir"}</Link></td>
+                  <td className="lead" style={{ fontWeight: 700 }}>{t.name}<div className="xs">{CATEGORY[t.category]?.label}</div></td>
+                  <td data-label="Estado"><span className={`pill ${pill}`}>{label}{t.status === "running" ? ` · R${t.current_round}` : ""}</span></td>
+                  <td data-label="Ritmo">{PACE_LABEL[t.pace.kind]}</td>
+                  <td data-label="Fecha" className="nw">{fmtDateTime(t.starts_at)}</td>
+                  <td data-label="Jugadores" className="r mono">{counts.get(t.id) ?? 0} / {t.capacity}</td>
+                  <td className="r act"><Link className="link" style={{ padding: 0 }} href={`/staff/torneo/${t.id}`}>{t.status === "running" ? "Abrir panel" : "Abrir"}</Link></td>
                 </tr>
               );
             })}

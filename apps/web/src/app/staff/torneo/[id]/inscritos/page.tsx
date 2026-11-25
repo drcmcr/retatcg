@@ -25,15 +25,15 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
       <LiveRefresh channel={`ins-${t.id}`} watch={[{ table: "registrations", filter: `tournament_id=eq.${t.id}` }]} />
       <h1 className="t1">Inscritos</h1>
       <div className="grid2">
-        <table className="tbl" style={{ fontSize: 15 }}>
+        <table className="tbl stack" style={{ fontSize: 15 }}>
           <thead><tr><th>Jugador</th><th>Rango</th><th>Estado</th><th></th></tr></thead>
           <tbody>
             {regs.map((r) => (
               <tr key={r.id}>
-                <td><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}</span></td>
-                <td>{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</td>
-                <td>{ST[r.status]}</td>
-                <td className="r nw">
+                <td className="lead"><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}</span></td>
+                <td data-label="Rango">{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</td>
+                <td data-label="Estado">{ST[r.status]}</td>
+                <td className="r nw act">
                   {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={() => staffRegistration(r.id, "checkin")} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
                   {r.status !== "dropped" && <ActionButton className="link" action={() => staffRegistration(r.id, "remove")} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
                 </td>

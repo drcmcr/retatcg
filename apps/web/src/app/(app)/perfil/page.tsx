@@ -29,7 +29,7 @@ export default async function Perfil() {
       </div>
       <div className="list">
         {[["/perfil/medallas", "star", "Medallas", `${me.medals.length} de 8 esta temporada`], ["/perfil/titulos", "flag", "Títulos", "Elige el que muestras"], ["/perfil/rangos", "chart", "Rangos y temporada", pos ? `#${pos} en el ranking` : ""],
-          ["/perfil/historial", "list", "Historial de torneos", ""], ["/perfil/estadisticas", "chart", "Estadísticas", ""], ["/perfil/editar", "edit", "Editar perfil", ""]].map(([href, ic, l, sub]) => (
+          ["/perfil/historial", "list", "Historial de torneos", ""], ["/perfil/estadisticas", "chart", "Estadísticas", ""], ["/perfil/editar", "edit", "Editar perfil", ""], ["/guia", "doc", "Guía de Reta", "Cómo funciona todo"]].map(([href, ic, l, sub]) => (
           <Link key={href} href={href!} className="li n4">
             <span className="avatar n4" style={{ background: "var(--card)" }}><Icon name={ic as "star"} /></span>
             <span className="grow"><span className="ttl">{l}</span>{sub && <span className="xs">{sub}</span>}</span>
@@ -37,7 +37,7 @@ export default async function Perfil() {
           </Link>
         ))}
         {(me.isOrganizer || me.roles.length > 0) && (
-          <Link href="/staff" className="li n4"><span className="avatar n4" style={{ background: "var(--violet)", color: "var(--white)" }}><Icon name="gear" /></span><span className="grow"><span className="ttl">Panel del staff</span><span className="xs">Mejor en computadora</span></span><Icon name="right" size={20} /></Link>
+          <Link href="/staff" className="li n4"><span className="avatar n4" style={{ background: "var(--violet)", color: "var(--white)" }}><Icon name="gear" /></span><span className="grow"><span className="ttl">Panel del staff</span><span className="xs">Torneos que organizas o arbitras</span></span><Icon name="right" size={20} /></Link>
         )}
       </div>
     </main>

@@ -16,6 +16,8 @@ export default function Ayuda() {
   return (
     <main className="screen">
       <TopBar title="Ayuda" back="/ajustes" />
+      <Link href="/guia" className="li n4"><span className="grow"><span className="ttl">Guía de Reta</span><span className="xs">Secciones, torneos, mesa, rangos, medallas y staff, paso a paso</span></span></Link>
+      <span className="lbl">Preguntas frecuentes</span>
       <div className="list">
         {FAQ.map(([q, a]) => (
           <details key={q} className="box n4">

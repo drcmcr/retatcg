@@ -78,6 +78,9 @@ export function MesaClient(p: Props) {
                   <CopyButton text={p.password} label="Copiar" className="btn p sm" />
                 </div>
                 <span className="xs">En Pocket: Batalla, Partida privada. Escribe la contraseña tal cual, en mayúsculas.</span>
+                {!p.readOnly && ["pending", "scheduled", "playing"].includes(m.status) && (
+                  <button className="link" disabled={pending} onClick={() => run(() => regenPassword(m.id), { ok: "Contraseña nueva. Tu rival ya la tiene." })}>Generar otra contraseña</button>
+                )}
               </div>
             </div>
           )}

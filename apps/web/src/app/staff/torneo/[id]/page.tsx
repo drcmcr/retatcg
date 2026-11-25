@@ -39,7 +39,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
           <h1 className="t1">{t.status === "running" && round ? `Ronda ${round.number}${round.stage === "swiss" && t.format !== "single_elim" ? ` de ${t.swiss_rounds}` : " · eliminación"}` : t.name}</h1>
           <span className="sm">{t.name} · {CATEGORY[t.category]?.label} · {formatLabel(t)} · {PACE_LABEL[t.pace.kind]} · código <span className="mono">{t.code}</span></span>
         </div>
-        <div className="row">
+        <div className="row wrap">
           <Link href={`/torneo/${t.code}`} className="btn g sm"><Icon name="eye" size={18} />Vista pública</Link>
           {["draft", "pending_approval", "registration"].includes(t.status) && <Link href={`/staff/torneo/${t.id}/editar`} className="btn g sm"><Icon name="edit" size={18} />Editar</Link>}
         </div>
@@ -107,7 +107,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
               })}
             </div>
           </div>
-          <div className="col" style={{ gap: 12, position: "sticky", top: 22 }}>
+          <div className="col ctrl" style={{ gap: 12, position: "sticky", top: 22 }}>
             {round.ends_at && (
               <div className="box n4 row between">
                 <div className="col" style={{ gap: 0 }}>

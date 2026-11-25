@@ -122,9 +122,9 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
           {f.pace === "jornadas" && (
             <div className="col">
               {f.sessions.map((s, i) => (
-                <div key={i} className="row" style={{ gap: 8, alignItems: "flex-end" }}>
-                  <div className="fld grow"><label htmlFor={`j${i}`}>Jornada {i + 1}</label><input id={`j${i}`} className="inp" type="datetime-local" value={s.startsAt} onChange={(e) => set("sessions", f.sessions.map((x, k) => (k === i ? { ...x, startsAt: e.target.value } : x)))} /></div>
-                  <div className="fld" style={{ width: 160 }}><label htmlFor={`r${i}`}>Rondas</label><input id={`r${i}`} className="inp mono" value={s.rounds} onChange={(e) => set("sessions", f.sessions.map((x, k) => (k === i ? { ...x, rounds: e.target.value } : x)))} placeholder="1,2,3" /></div>
+                <div key={i} className="row wrap" style={{ gap: 8, alignItems: "flex-end" }}>
+                  <div className="fld" style={{ flex: "1 1 200px" }}><label htmlFor={`j${i}`}>Jornada {i + 1}</label><input id={`j${i}`} className="inp" type="datetime-local" value={s.startsAt} onChange={(e) => set("sessions", f.sessions.map((x, k) => (k === i ? { ...x, startsAt: e.target.value } : x)))} /></div>
+                  <div className="fld" style={{ flex: "1 1 110px", maxWidth: 160 }}><label htmlFor={`r${i}`}>Rondas</label><input id={`r${i}`} className="inp mono" value={s.rounds} onChange={(e) => set("sessions", f.sessions.map((x, k) => (k === i ? { ...x, rounds: e.target.value } : x)))} placeholder="1,2,3" /></div>
                   <button type="button" className="ib" aria-label="Quitar jornada" onClick={() => set("sessions", f.sessions.filter((_, k) => k !== i))}><Icon name="trash" size={18} /></button>
                 </div>
               ))}
