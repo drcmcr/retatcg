@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
-import { estimateTournamentMinutes, estimateWindowDays, recommendedSwissRounds, recommendedTopCut } from "@reta/torneo";
+import { PR_RULES, estimateTournamentMinutes, estimateWindowDays, recommendedSwissRounds, recommendedTopCut } from "@reta/torneo";
 import { createTournament, updateTournament } from "@/actions/staff";
 import { useToast } from "@/components/client";
 import { Icon } from "@/components/Icon";
@@ -34,10 +34,76 @@ function Seg<T extends string | number>({ value, options, onChange, label }: { v
   );
 }
 
+/** Explicaciones del ícono de información de cada campo. */
+const m = PR_RULES.multiplier;
+const INFO: Record<string, [string, string][]> = {
+  categoria: [
+    ["Casual", "Para jugar por diversión. No da PR ni medallas."],
+    ["Comunitario", `La liga de tu comunidad. PR ×${m.comunitario} y medallas si hay al menos ${PR_RULES.minAccountPlayers} jugadores con cuenta.`],
+    ["Clasificatorio", `Más competitivo. PR ×${m.clasificatorio}. Lo aprueba el superadmin antes de abrir inscripción.`],
+    ["Mayor", `Los eventos grandes de la temporada. PR ×${m.mayor}. Lo aprueba el superadmin.`],
+  ],
+  formato: [
+    ["Suizo + top cut", "Todos juegan las rondas suizas contra rivales con puntos parecidos, sin repetir. Al final, los mejores pasan a eliminación directa."],
+    ["Solo suizo", "Todos juegan todas las rondas. Gana quien sume más puntos; los empates se rompen por la fuerza de los rivales."],
+    ["Eliminación directa", "Quien pierde, sale. Rápido, pero la mitad de los jugadores se va en la primera ronda."],
+  ],
+  numeros: [
+    ["Jugadores esperados", "Solo sirve para recomendar rondas y calcular la duración. No limita nada."],
+    ["Rondas suizas", "Se recomiendan solas según los jugadores esperados. Puedes cambiarlas."],
+    ["Top cut", "Cuántos jugadores pasan a eliminación directa al terminar el suizo."],
+    ["Cupo", "Máximo de inscritos. Los demás entran a lista de espera y suben solos si alguien se baja."],
+  ],
+  partidas: [
+    ["Bo1", "Una sola partida decide el encuentro. Rondas más cortas."],
+    ["Bo3", "Al mejor de tres: gana quien gane dos partidas. Más justo, pero cada ronda dura casi el doble."],
+  ],
+  ritmo: [
+    ["En vivo", "Todos juegan al mismo tiempo en una sola sesión, con reloj por ronda. Ideal para una tarde."],
+    ["Por jornadas", "El torneo se reparte en varias sesiones en días distintos (por ejemplo, rondas 1 a 3 el sábado y 4 a 5 el domingo). Cada jornada se juega en vivo y abre su check-in 30 minutos antes."],
+    ["Por ventana", "No hay hora fija: cada ronda dura 24 o 48 horas y cada pareja acuerda cuándo jugar dentro del plazo. Ideal para ligas largas o jugadores con horarios distintos."],
+  ],
+  envivo: [
+    ["Check-in", "Cuántos minutos antes del inicio se abre. Quien no lo haga no se empareja."],
+    ["Minutos por ronda", "Si lo dejas vacío: 25 en Bo1 y 50 en Bo3. Al acabar el reloj, el staff decide las mesas abiertas."],
+  ],
+  mazo: [
+    ["Libre", "Nadie declara mazo. Cada quien juega lo que quiera."],
+    ["Por ronda", "Antes de cada ronda, cada jugador sube la captura del mazo que va a usar. El staff la revisa."],
+    ["Fijo", "Cada jugador declara un solo mazo para todo el torneo."],
+  ],
+  restricciones: [
+    ["Sets hasta", "Solo se permiten cartas hasta esa expansión. Déjalo vacío para no limitar."],
+    ["Pokémon ex", "Permitidos, sin Mega ex, prohibidos, solo ex o un máximo por mazo."],
+    ["Revisión", "Con cualquier restricción, el mazo se declara por ronda para que el staff pueda revisarlo."],
+  ],
+};
+
+function InfoLabel({ k, text, htmlFor, open, setOpen }: { k: string; text: string; htmlFor?: string; open: string | null; setOpen: (k: string | null) => void }) {
+  const on = open === k;
+  return (
+    <>
+      <span className="row" style={{ gap: 2, alignItems: "center" }}>
+        {htmlFor ? <label htmlFor={htmlFor} className="flabel">{text}</label> : <span className="flabel">{text}</span>}
+        <button type="button" className="infob" aria-label={`Qué significa: ${text}`} aria-expanded={on} aria-controls={`info-${k}`} onClick={() => setOpen(on ? null : k)}>
+          <Icon name="info" size={18} />
+        </button>
+      </span>
+      {on && (
+        <dl id={`info-${k}`} className="tipbox">
+          {INFO[k]!.map(([t, d]) => <div key={t}><dt>{t}</dt><dd>{d}</dd></div>)}
+        </dl>
+      )}
+    </>
+  );
+}
+
 export function TournamentForm({ initial, id, locked, superadmin }: { initial?: FormValue; id?: string; locked?: boolean; superadmin?: boolean }) {
   const [f, setF] = useState<FormValue>(initial ?? defaultForm());
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const il = { open: info, setOpen: setInfo };
   const toast = useToast();
   const set = <K extends keyof FormValue>(k: K, v: FormValue[K]) => setF((x) => ({ ...x, [k]: v }));
   const setR = (patch: Partial<Restrictions>) => setF((x) => ({ ...x, restrictions: { ...x.restrictions, ...patch } }));
@@ -87,7 +153,7 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
             <div className="fld"><label htmlFor="n">Nombre</label><input id="n" className="inp" value={f.name} maxLength={60} onChange={(e) => set("name", e.target.value)} placeholder="Copa Nocturna #13" /></div>
             <div className="fld"><label htmlFor="c">Club u organización</label><input id="c" className="inp" value={f.club} maxLength={40} onChange={(e) => set("club", e.target.value)} /></div>
           </div>
-          <div className="fld"><span className="flabel">Categoría</span>
+          <div className="fld"><InfoLabel k="categoria" text="Categoría" {...il} />
             <Seg label="Categoría" value={f.category} onChange={(v) => !locked && set("category", v)} options={Object.entries(CATEGORY).map(([k, v]) => [k, `${v.label} · ${v.pr}`])} />
             {["clasificatorio", "mayor"].includes(f.category) && !superadmin && <span className="hint"><Icon name="info" size={15} />Clasificatorios y Mayores esperan la aprobación del superadmin.</span>}
           </div>
@@ -95,7 +161,9 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
 
         <section className="col" style={{ gap: 12 }}>
           <span className="lbl">Formato y ritmo</span>
+          <InfoLabel k="formato" text="Formato" {...il} />
           <Seg label="Formato" value={f.format} onChange={(v) => !locked && set("format", v)} options={[["swiss_topcut", "Suizo + top cut"], ["swiss", "Solo suizo"], ["single_elim", "Eliminación directa"]]} />
+          <InfoLabel k="numeros" text="Jugadores, rondas y cupo" {...il} />
           <div className="grid4">
             <div className="fld"><label htmlFor="exp">Jugadores esperados</label><input id="exp" className="inp" type="number" min={2} max={256} value={f.expected}
               onChange={(e) => { const n = Number(e.target.value); setF((x) => ({ ...x, expected: n, swiss_rounds: recommendedSwissRounds(n) || x.swiss_rounds, top_cut: x.format === "swiss_topcut" ? (recommendedTopCut(n) || 4) : x.top_cut })); }} /></div>
@@ -103,11 +171,15 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
             {f.format === "swiss_topcut" && <div className="fld"><label htmlFor="tc">Top cut</label><select id="tc" className="inp" value={f.top_cut} onChange={(e) => set("top_cut", Number(e.target.value))}>{[2, 4, 8, 16].map((n) => <option key={n} value={n}>Top {n}</option>)}</select></div>}
             <div className="fld"><label htmlFor="cap">Cupo</label><input id="cap" className="inp" type="number" min={2} max={256} value={f.capacity} onChange={(e) => set("capacity", Number(e.target.value))} /></div>
           </div>
+          <InfoLabel k="partidas" text="Bo1 o Bo3" {...il} />
           <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
             {f.format !== "single_elim" && <div className="fld"><span className="flabel">Partidas del suizo</span><Seg label="Partidas del suizo" value={f.swiss_best_of} onChange={(v) => set("swiss_best_of", v)} options={[[1, "Bo1"], [3, "Bo3"]]} /></div>}
             {f.format !== "swiss" && <div className="fld"><span className="flabel">Partidas de eliminación</span><Seg label="Partidas de eliminación" value={f.top_best_of} onChange={(v) => set("top_best_of", v)} options={[[1, "Bo1"], [3, "Bo3"]]} /></div>}
           </div>
+          <InfoLabel k="ritmo" text="Ritmo" {...il} />
           <Seg label="Ritmo" value={f.pace} onChange={(v) => set("pace", v)} options={[["en_vivo", "En vivo"], ["jornadas", "Por jornadas"], ["ventana", "Por ventana"]]} />
+          <span className="hint"><Icon name="info" size={15} />{INFO.ritmo!.find(([t]) => t === { en_vivo: "En vivo", jornadas: "Por jornadas", ventana: "Por ventana" }[f.pace])?.[1]}</span>
+          {f.pace === "en_vivo" && <InfoLabel k="envivo" text="Check-in y reloj" {...il} />}
           {f.pace === "en_vivo" && (
             <div className="grid3">
               <div className="fld"><label htmlFor="st">Inicio</label><input id="st" className="inp" type="datetime-local" value={f.starts_at} onChange={(e) => set("starts_at", e.target.value)} /></div>
@@ -138,8 +210,10 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
 
         <section className="col" style={{ gap: 12 }}>
           <span className="lbl">Mazo y restricciones</span>
+          <InfoLabel k="mazo" text="Regla de mazo" {...il} />
           <Seg label="Regla de mazo" value={f.deck_policy} onChange={(v) => !locked && set("deck_policy", v)} options={[["libre", "Libre"], ["por_ronda", "Por ronda"], ["fijo", "Fijo"]]} />
           {f.deck_policy === "libre" && rules.length > 0 && <span className="hint"><Icon name="info" size={15} />Con restricciones, el mazo libre sube a “por ronda” para poder revisarlo.</span>}
+          <InfoLabel k="restricciones" text="Restricciones" {...il} />
           <div className="grid3">
             <div className="fld"><label htmlFor="sets">Sets hasta</label><input id="sets" className="inp" value={f.restrictions.upToSetName ?? ""} onChange={(e) => setR({ upToSetName: e.target.value || undefined })} placeholder="Sin límite" disabled={locked} /></div>
             <div className="fld"><label htmlFor="ex">Pokémon ex</label>

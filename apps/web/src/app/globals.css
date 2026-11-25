@@ -103,7 +103,7 @@ p { margin: 0; }
 
 /* ---------- campos ---------- */
 .fld { display: flex; flex-direction: column; gap: 6px; }
-.fld > label, .fld > .flabel { font-weight: 600; font-size: 15px; }
+.fld > label, .flabel { font-weight: 600; font-size: 15px; }
 .inp { min-height: 52px; width: 100%; background: var(--card); border: 0; box-shadow: inset 0 0 0 2px var(--line); display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 16px; color: var(--ink); }
 .inp::placeholder { color: var(--line); }
 .inp:focus, .inp:focus-within { outline: none; box-shadow: inset 0 0 0 2px var(--cyan); }
@@ -112,6 +112,11 @@ p { margin: 0; }
 .inp input { background: none; border: 0; outline: none; flex: 1; height: 50px; color: var(--ink); }
 textarea.inp { padding: 12px 14px; min-height: 88px; resize: vertical; }
 select.inp { appearance: none; }
+.infob { width: 40px; height: 40px; margin: -10px 0; display: inline-grid; place-items: center; background: none; border: 0; color: var(--cyan); cursor: pointer; }
+.infob[aria-expanded=true] { color: var(--lime); }
+.tipbox { margin: 0; background: var(--card); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 3px 0 0 var(--cyan); }
+.tipbox dt { font-weight: 800; font-size: 14px; color: var(--ink); }
+.tipbox dd { margin: 0; font-size: 14px; line-height: 1.4; color: var(--ink-3); }
 .hint { font-size: 13px; color: var(--ink-2); display: flex; gap: 6px; align-items: flex-start; }
 .hint.ok { color: var(--ok); }
 .hint.err { color: var(--err); }
