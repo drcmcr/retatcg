@@ -117,13 +117,8 @@ export async function startTournament(sql: Sql, tournamentId: string, actor: str
     const t = await loadTournament(tx, tournamentId, true);
     if (actor && !(await isStaff(tx, tournamentId, actor))) throw new UserError("Solo el staff del torneo puede empezarlo.");
     if (t.status !== "registration") throw new UserError("El torneo no está en inscripción.");
-    // Por ventana no hay check-in en vivo: la inscripción basta.
-    if (t.pace?.kind === "ventana") {
-      await tx`update public.registrations set status = 'checked_in', checked_in_at = now()
-               where tournament_id = ${tournamentId} and status = 'registered'`;
-    }
-    await tx`update public.registrations set status = 'removed'
-             where tournament_id = ${tournamentId} and status in ('registered', 'waitlist')`;
+    // Cierra el check-in: faltas, lugares para la lista de espera presente (en SQL, misma transacción).
+    const [{ closed }] = await tx`select public._close_checkin(${tournamentId}) as closed`;
     await tx`update public.registrations r set rank_at_start = public._rank_index(public._user_pr(r.user_id))
              where tournament_id = ${tournamentId} and status = 'checked_in'`;
     const regs = await players(tx, tournamentId);
@@ -142,7 +137,7 @@ export async function startTournament(sql: Sql, tournamentId: string, actor: str
     }
     await tx`update public.tournaments set status = 'running', started_at = now() where id = ${tournamentId}`;
     await createRound(tx, t, 1, stage, pairings, seed, byId);
-    await audit(tx, tournamentId, actor, "Empezó el torneo", { jugadores: regs.length });
+    await audit(tx, tournamentId, actor, "Empezó el torneo", { jugadores: regs.length, ...closed });
     return { round: 1, tables: pairings.length };
   });
 }
@@ -166,7 +161,9 @@ export async function nextRound(sql: Sql, tournamentId: string, actor: string | 
     if (round.stage === "swiss") {
       const { records } = await engineMatches(tx, tournamentId, "swiss");
       const engPlayers = regs.map((r) => ({ id: r.id as string, dropped: r.status === "dropped" }));
-      if (t.current_round < t.swiss_rounds) {
+      // Si ya no quedan al menos 2 jugadores activos (retiros, ausencias), el suizo termina aquí.
+      const active = engPlayers.filter((p) => !p.dropped).length;
+      if (t.current_round < t.swiss_rounds && active >= 2) {
         const { pairings } = E.pairSwissRound({ players: engPlayers, matches: records, seed });
         await createRound(tx, t, number, "swiss", pairings, seed, byId);
         await audit(tx, tournamentId, actor, `Emparejó la ronda ${number}`, { mesas: pairings.length });
@@ -397,9 +394,13 @@ async function resolveWindowRound(tx: Sql, t: Row, round: Row, now: number): Pro
       await tx`update public.matches set games_a = ${res === "victoria_a" ? win : 0}, games_b = ${res === "victoria_b" ? win : 0},
                game_draws = 0, double_loss = false where id = ${m.id}`;
       await tx`select public._confirm(${m.id}::uuid, 'plazo')`;
+      // Quien no se presentó sale del torneo.
+      await tx`select public._drop_absent(${res === "victoria_a" ? m.b : m.a}::uuid, ${round.number}::int)`;
     } else if (res === "derrota_doble" && round.stage === "swiss") {
       await tx`update public.matches set games_a = 0, games_b = 0, game_draws = 0, double_loss = true where id = ${m.id}`;
       await tx`select public._confirm(${m.id}::uuid, 'plazo')`;
+      await tx`select public._drop_absent(${m.a}::uuid, ${round.number}::int)`;
+      await tx`select public._drop_absent(${m.b}::uuid, ${round.number}::int)`;
     } else {
       await tx`update public.matches set status = 'disputed' where id = ${m.id}`;
       await tx`insert into public.cases (tournament_id, match_id, kind) values (${t.id}, ${m.id}, 'plazo')`;

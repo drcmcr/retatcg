@@ -5,6 +5,7 @@ import { loadRegs, loadRounds, regName } from "@/lib/tournament";
 import { supabaseServer } from "@/lib/supabase/server";
 import { fmtTime } from "@/lib/format";
 import { ResultForm } from "./ResultForm";
+import { NoShow } from "./NoShow";
 
 export const metadata = { title: "Resultado de mesa" };
 
@@ -25,6 +26,9 @@ export default async function StaffMesa({ params }: { params: Promise<{ id: stri
       <div className="grid2">
         <ResultForm matchId={m.id} a={regName(byId.get(m.a))} b={regName(byId.get(m.b))} bestOf={round.best_of} stage={round.stage}
           current={{ a: m.games_a, b: m.games_b, d: m.game_draws, dl: m.double_loss, status: m.status }} />
+        {round.status !== "closed" && (
+          <NoShow matchId={m.id} players={[{ id: m.a, name: regName(byId.get(m.a)) }, { id: m.b, name: regName(byId.get(m.b)) }]} />
+        )}
         <div className="box n4 col" style={{ gap: 6 }}>
           <span className="lbl" style={{ fontSize: 16 }}>Registro de la mesa</span>
           {(events ?? []).map((e, i) => (

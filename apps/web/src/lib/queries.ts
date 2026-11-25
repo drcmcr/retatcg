@@ -8,13 +8,13 @@ export async function whatsNow(userId: string): Promise<{ center: Center; banner
   const supabase = await supabaseServer();
   const { data: regs } = await supabase
     .from("registrations")
-    .select("id,status,tournament:tournaments!inner(id,code,name,status,current_round,starts_at,checkin_minutes,pace)")
+    .select("id,status,checked_in_at,tournament:tournaments!inner(id,code,name,status,current_round,starts_at,checkin_minutes,pace)")
     .eq("user_id", userId)
-    .in("status", ["registered", "checked_in"])
+    .in("status", ["registered", "checked_in", "waitlist"])
     .in("tournament.status", ["registration", "running"]);
-  const list = (regs ?? []) as unknown as { id: string; status: string; tournament: { id: string; code: string; name: string; status: string; current_round: number; starts_at: string; checkin_minutes: number; pace: { kind: string } } }[];
+  const list = (regs ?? []) as unknown as { id: string; status: string; checked_in_at: string | null; tournament: { id: string; code: string; name: string; status: string; current_round: number; starts_at: string; checkin_minutes: number; pace: { kind: string } } }[];
 
-  for (const r of list.filter((x) => x.tournament.status === "running")) {
+  for (const r of list.filter((x) => x.tournament.status === "running" && x.status === "checked_in")) {
     const { data: m } = await supabase
       .from("matches")
       .select("id,table_no,status,b,round:rounds!inner(number,ends_at,status)")
@@ -37,7 +37,7 @@ export async function whatsNow(userId: string): Promise<{ center: Center; banner
     };
   }
   const now = Date.now();
-  for (const r of list.filter((x) => x.tournament.status === "registration" && x.status === "registered" && x.tournament.pace.kind !== "ventana")) {
+  for (const r of list.filter((x) => x.tournament.status === "registration" && (x.status === "registered" || (x.status === "waitlist" && !x.checked_in_at)) && x.tournament.pace.kind !== "ventana")) {
     const opens = new Date(r.tournament.starts_at).getTime() - r.tournament.checkin_minutes * 60_000;
     if (now >= opens) {
       return { center: { label: "Check-in", href: `/torneo/${r.tournament.code}/checkin`, icon: "check", pulse: true }, banner: { text: `Check-in abierto · ${r.tournament.name}`, href: `/torneo/${r.tournament.code}/checkin`, ends: r.tournament.starts_at } };

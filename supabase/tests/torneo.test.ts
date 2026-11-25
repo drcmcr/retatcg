@@ -200,7 +200,118 @@ describe("torneo por ventana", () => {
     const after = await sql`select table_no, games_a, games_b, double_loss, confirmed_how from public.matches where id in ${sql([ms[0]!.id, ms[1]!.id])} order by table_no`;
     expect(after[0]).toMatchObject({ games_a: 1, games_b: 0, confirmed_how: "plazo" });
     expect(after[1]).toMatchObject({ double_loss: true, confirmed_how: "plazo" });
-    const [t] = await sql`select current_round from public.tournaments where id = ${id}`;
-    expect(t!.current_round).toBe(2);
+    // Quien no se presentó sale del torneo: solo queda A y el torneo termina.
+    const regs = await sql`select user_id, status from public.registrations where tournament_id = ${id}`;
+    expect(regs.filter((r) => r.status === "dropped").length).toBe(3);
+    expect(regs.find((r) => r.user_id === ms[0]!.ua)!.status).toBe("checked_in");
+    const [t] = await sql`select status from public.tournaments where id = ${id}`;
+    expect(t!.status).toBe("finished");
+  });
+});
+
+describe("asistencia", () => {
+  async function liveTournament(org: string, name: string, capacity: number) {
+    const id = (await as(org, (tx) => tx`select public.create_tournament(${sql.json({
+      name, category: "casual", format: "swiss", swiss_rounds: 1, capacity,
+      starts_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+    })}) as id`))[0]!.id as string;
+    await as(org, (tx) => tx`select public.publish_tournament(${id})`);
+    return id;
+  }
+
+  it("la falta cuenta, la lista de espera presente entra y el ausente de mesa sale", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const ps: string[] = [];
+    for (let i = 0; i < 4; i++) ps.push(await newUser(`asis${i}`));
+    const id = await liveTournament(org, "Copa Asistencia", 2);
+    for (const p of ps) await as(p, (tx) => tx`select public.register(${id})`);
+    const st = async () => Object.fromEntries((await sql`select user_id, status from public.registrations where tournament_id = ${id}`).map((r) => [r.user_id, r.status]));
+    expect(Object.values(await st()).sort()).toEqual(["registered", "registered", "waitlist", "waitlist"]);
+
+    await as(ps[0]!, (tx) => tx`select public.checkin(${id})`);
+    expect((await as(ps[2]!, (tx) => tx`select public.checkin(${id}) as s`))[0]!.s).toBe("waitlist");
+    await startTournament(sql, id, org);
+    const s = await st();
+    expect([s[ps[0]!], s[ps[1]!], s[ps[2]!], s[ps[3]!]]).toEqual(["checked_in", "no_show", "checked_in", "removed"]);
+    const [n] = await sql`select title from public.notifications where user_id = ${ps[1]!} order by id desc limit 1`;
+    expect(n!.title).toMatch(/No hiciste check-in/);
+
+    // El juez marca que asis2 no se presentó: gana asis0 y asis2 sale del torneo.
+    const [m] = await sql`select m.id, m.a, m.b from public.matches m where m.tournament_id = ${id}`;
+    const [absent] = await sql`select id from public.registrations where tournament_id = ${id} and user_id = ${ps[2]!}`;
+    await as(org, (tx) => tx`select public.staff_no_show(${m!.id}, ${absent!.id})`);
+    expect((await st())[ps[2]!]).toBe("dropped");
+    const [done] = await sql`select status, winner from public.matches where id = ${m!.id}`;
+    expect(done!.status).toBe("confirmed");
+    expect(done!.winner).not.toBe(absent!.id);
+
+    // Segunda falta de asis1 en la temporada: 7 días sin inscribirse.
+    const id2 = await liveTournament(org, "Copa Asistencia 2", 4);
+    await as(ps[1]!, (tx) => tx`select public.register(${id2})`);
+    await as(ps[0]!, (tx) => tx`select public.register(${id2})`);
+    await as(ps[3]!, (tx) => tx`select public.register(${id2})`);
+    await as(ps[0]!, (tx) => tx`select public.checkin(${id2})`);
+    await as(ps[3]!, (tx) => tx`select public.checkin(${id2})`);
+    await startTournament(sql, id2, org);
+    const id3 = await liveTournament(org, "Copa Asistencia 3", 4);
+    await expect(as(ps[1]!, (tx) => tx`select public.register(${id3})`)).rejects.toThrow(/suspendida/);
+
+    // El staff ve las faltas de cada inscrito.
+    const att = await as(org, (tx) => tx`select * from public.tournament_attendance(${id2})`);
+    expect(att.find((r) => r.user_id === ps[1]!)!.no_shows).toBe(2);
+  });
+
+  it("recuerda 24 h antes y al abrir el check-in, una sola vez", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const p = await newUser("recordar1");
+    const id = (await as(org, (tx) => tx`select public.create_tournament(${sql.json({
+      name: "Copa Recordatorio", category: "casual", format: "swiss", swiss_rounds: 1,
+      starts_at: new Date(Date.now() + 5 * 3_600_000).toISOString(),
+    })}) as id`))[0]!.id;
+    await as(org, (tx) => tx`select public.publish_tournament(${id})`);
+    await as(p, (tx) => tx`select public.register(${id})`);
+    expect((await sql`select public._tournament_reminders() as n`)[0]!.n).toBeGreaterThanOrEqual(1);
+    const [n] = await sql`select title from public.notifications where user_id = ${p} order by id desc limit 1`;
+    expect(n!.title).toMatch(/^Hoy a las|^Mañana a las/);
+    const before = (await sql`select count(*)::int c from public.notifications where user_id = ${p}`)[0]!.c;
+    await sql`select public._tournament_reminders()`;
+    expect((await sql`select count(*)::int c from public.notifications where user_id = ${p}`)[0]!.c).toBe(before);
+    // Al abrir el check-in.
+    await sql`update public.tournaments set starts_at = now() + interval '10 minutes' where id = ${id}`;
+    await sql`select public._tournament_reminders()`;
+    const [c] = await sql`select title from public.notifications where user_id = ${p} order by id desc limit 1`;
+    expect(c!.title).toMatch(/Abrió el check-in/);
+  });
+});
+
+describe("cuentas inactivas y métricas", () => {
+  it("solo el superadmin ve métricas", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const m = (await as(org, (tx) => tx`select public.platform_metrics() as m`))[0]!.m;
+    expect(m.perfiles).toBeGreaterThan(5);
+    expect(m).toHaveProperty("asistencia.faltas");
+    const p = (await sql`select id from public.profiles where username = 'jugador1'`)[0]!.id;
+    await expect(as(p, (tx) => tx`select public.platform_metrics()`)).rejects.toThrow(/superadmin/);
+  });
+
+  it("borra registros sin terminar, avisa por inactividad y borra sin romper torneos", async () => {
+    const [half] = await sql`insert into auth.users (email, created_at) values ('mitad@prueba.mx', now() - interval '10 days') returning id`;
+    const old = await newUser("viejo1");
+    const [reg] = await sql`select id from public.registrations limit 1`;
+    await sql`update public.registrations set user_id = ${old}, created_at = now() - interval '14 months' where id = ${reg!.id}`;
+    await sql`update public.profiles set created_at = now() - interval '14 months', last_seen_at = now() - interval '13 months' where id = ${old}`;
+    let r = (await sql`select public._cleanup_accounts() as r`)[0]!.r;
+    expect(r.sin_terminar).toBe(1);
+    expect((await sql`select 1 from auth.users where id = ${half!.id}`).length).toBe(0);
+    expect((await sql`select inactive_warned_at from public.profiles where id = ${old}`)[0]!.inactive_warned_at).not.toBeNull();
+    // Si vuelve a entrar, se cancela el aviso.
+    await as(old, (tx) => tx`select public.touch_seen()`);
+    expect((await sql`select inactive_warned_at from public.profiles where id = ${old}`)[0]!.inactive_warned_at).toBeNull();
+    // Si no vuelve en 30 días, se borra y su inscripción queda como "Jugador eliminado".
+    await sql`update public.profiles set last_seen_at = now() - interval '14 months', inactive_warned_at = now() - interval '31 days' where id = ${old}`;
+    r = (await sql`select public._cleanup_accounts() as r`)[0]!.r;
+    expect(r.borradas).toBe(1);
+    const [after] = await sql`select user_id, guest_name from public.registrations where id = ${reg!.id}`;
+    expect(after).toMatchObject({ user_id: null, guest_name: "Jugador eliminado" });
   });
 });

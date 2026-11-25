@@ -31,6 +31,7 @@ export async function staffMatch(matchId: string, action: "recordar" | "extender
 export async function setResult(matchId: string, a: number, b: number, d: number, doubleLoss: boolean, reason: string) {
   return callRpc("staff_set_result", { p_match: matchId, p_games_a: a, p_games_b: b, p_draws: d, p_double_loss: doubleLoss, p_reason: reason });
 }
+export async function staffNoShow(matchId: string, absentRegId: string) { return callRpc("staff_no_show", { p_match: matchId, p_absent: absentRegId }); }
 export async function judgeMessage(caseId: number, body: string) { return callRpc("judge_message", { p_case: caseId, p_body: body }); }
 export async function resolveCase(caseId: number, resolution: string) { return callRpc("resolve_case", { p_case: caseId, p_resolution: resolution }); }
 export async function addSanction(userId: string, tournamentId: string, kind: string, reason: string, pr: number, days: number) {

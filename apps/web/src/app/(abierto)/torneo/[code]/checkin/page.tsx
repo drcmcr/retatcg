@@ -33,12 +33,16 @@ export default async function Checkin({ params }: { params: Promise<{ code: stri
         <div className="btn s" role="status">Ya estás. Te avisamos cuando salga tu mesa.</div>
       ) : mine?.status === "registered" ? (
         <ActionButton action={() => checkin(t.id)} ok="Check-in listo. ¡Suerte!">Estoy aquí</ActionButton>
+      ) : mine?.status === "waitlist" && mine.checked_in_at ? (
+        <div className="btn s" role="status">Estás presente en la lista de espera. Si alguien falta, entras y te avisamos.</div>
+      ) : mine?.status === "waitlist" ? (
+        <ActionButton action={() => checkin(t.id)} ok="Listo: si alguien falta, entras tú.">Estoy aquí (lista de espera)</ActionButton>
       ) : (
         <p className="sm">No tienes un lugar en este torneo.</p>
       )}
       <div className="row between sm"><span>Ya confirmaron</span><b style={{ color: "var(--ink)" }}>{done} de {total}</b></div>
       <div className="bar" aria-hidden="true"><i style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></div>
-      <p className="xs">Quien no hace check-in queda fuera y su lugar pasa a la lista de espera.</p>
+      <p className="xs">Quien no hace check-in queda fuera, cuenta como falta y su lugar pasa al primero en espera que sí lo hizo. Dos faltas en la temporada: 7 días sin poder inscribirte.</p>
     </main>
   );
 }

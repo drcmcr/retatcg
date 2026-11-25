@@ -11,6 +11,7 @@ const DOCS: Record<string, { title: string; body: string[] }> = {
       "Para qué: organizar torneos, emparejarte, mostrar tablas y rankings, resolver disputas y avisarte de tus rondas. No vendemos tus datos ni mostramos publicidad.",
       "Qué es público: tu usuario, ícono, rango, títulos, medallas y resultados en torneos. Puedes hacer tu perfil privado en Ajustes.",
       "Tus derechos: puedes descargar tus datos y eliminar tu cuenta desde Ajustes, Privacidad. Tu cuenta se borra a los 7 días; tus resultados quedan como \"Jugador eliminado\" para no alterar las tablas de otros.",
+      "Conservación: si empiezas el registro y no lo terminas, borramos esos datos a los 7 días. Si no usas Reta durante 12 meses, te avisamos en la app y, si no vuelves en 30 días, borramos tu cuenta de la misma forma.",
       "Dónde se guardan: en servicios de infraestructura (Supabase y Vercel) que procesan los datos por cuenta de Reta.",
     ],
   },

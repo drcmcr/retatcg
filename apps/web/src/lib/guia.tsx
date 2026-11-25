@@ -92,6 +92,13 @@ export const CHAPTERS: Chapter[] = [
           <li>Antes de empezar se abre el <b>check-in</b> (normalmente 30 minutos antes). Si no lo haces, no te emparejan.</li>
           <li>En torneos por ventana el check-in es automático: si estás inscrito, juegas.</li>
         </ol>
+        <h2>Faltas y lista de espera</h2>
+        <ul className="dots">
+          <li>Si te inscribes y no haces check-in, <b>cuenta como falta</b>. Con 2 faltas en la temporada no puedes inscribirte a torneos durante 7 días.</li>
+          <li>¿Ya no puedes ir? Toca <b>Ya no puedo ir</b> antes de que empiece: liberas tu lugar y no cuenta como falta.</li>
+          <li>Si estás en lista de espera, también haz check-in. Al empezar, los lugares de quienes no llegaron pasan, en orden, a los de espera que sí están.</li>
+          <li>Te avisamos 24 horas antes y cuando abre el check-in.</li>
+        </ul>
         <h2>Mazos</h2>
         <ul className="dots">
           <li><b>Libre:</b> juegas lo que quieras, no declaras nada.</li>
@@ -128,12 +135,12 @@ export const CHAPTERS: Chapter[] = [
         </ol>
         <h2>Cuando algo sale mal</h2>
         <ul className="dots">
-          <li><b>Rival ausente:</b> toca <b>Juez</b> y elige “Mi rival no se presenta”. El juez ve quién llegó y cuándo.</li>
+          <li><b>Rival ausente:</b> toca <b>Juez</b> y elige “Mi rival no se presenta”. El juez ve quién llegó y cuándo. Quien no se presenta a su mesa pierde y sale del torneo.</li>
           <li><b>Desconexión:</b> toca <b>Se cayó</b>. La primera vez, la partida se repite con contraseña nueva. Si vuelve a pasar o no regresas en 5 minutos, la partida es para tu rival.</li>
           <li><b>Cualquier otra cosa:</b> toca <b>Juez</b> y <b>Llamar al juez</b>. El caso aparece en tus avisos y puedes responder con capturas.</li>
         </ul>
         <h2>Por ventana: coordinar</h2>
-        <p>Cada ronda tiene un plazo de 24 o 48 horas. Marca en qué horas puedes jugar o propón un horario; tu rival lo acepta con un toque. Marcar disponibilidad cuenta como estar activo. Al vencer el plazo, si solo uno estuvo activo, gana ese; si ninguno, pierden los dos; si los dos estuvieron activos y no jugaron, decide el juez.</p>
+        <p>Cada ronda tiene un plazo de 24 o 48 horas. Marca en qué horas puedes jugar o propón un horario; tu rival lo acepta con un toque. Marcar disponibilidad cuenta como estar activo. Al vencer el plazo, si solo uno estuvo activo, gana ese; si ninguno, pierden los dos. Quien pierde así por inactividad sale del torneo. Si los dos estuvieron activos y no jugaron, decide el juez.</p>
         <Tip tone="l">El bye (ronda libre) cuenta como victoria y no necesitas hacer nada.</Tip>
       </>
     ),
@@ -244,7 +251,8 @@ export const CHAPTERS: Chapter[] = [
           <li><b>Mesa:</b> recuerda a los jugadores, extiende su tiempo, pide repetir la partida o pon el resultado (siempre con motivo; queda registrado).</li>
           <li><b>Casos:</b> cada disputa, ausencia o llamada al juez, con su historial. Responde, resuelve y sanciona.</li>
           <li><b>Revisar mazos:</b> aprueba o rechaza cada declaración.</li>
-          <li><b>Inscritos y staff:</b> haz check-in por alguien, da de baja inscritos, agrega invitados sin cuenta y suma jueces. La lista de espera sube sola.</li>
+          <li><b>Inscritos y staff:</b> haz check-in por alguien, da de baja inscritos, agrega invitados sin cuenta y suma jueces. Ves cuántos torneos jugó cada inscrito y cuántas faltas tiene. La lista de espera sube sola.</li>
+          <li><b>No se presentó:</b> desde la mesa, marca al ausente. Su rival gana la mesa y el ausente sale del torneo.</li>
           <li><b>Anuncio:</b> un mensaje fijo que ven todos los jugadores del torneo.</li>
           <li><b>Auditoría:</b> cada acción del staff queda guardada con quién, cuándo y por qué.</li>
         </ul>

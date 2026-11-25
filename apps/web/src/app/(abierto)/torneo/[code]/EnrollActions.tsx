@@ -11,7 +11,7 @@ import { now } from "@/lib/time";
 type Props = {
   t: { id: string; code: string; name: string; status: string; starts_at: string; checkin_minutes: number; pace: string; policy: string; rules: string[]; format: string; category: string };
   me: { id: string } | null;
-  reg: { status: string } | null;
+  reg: { status: string; checked_in_at?: string | null } | null;
   matchId?: string;
 };
 
@@ -21,6 +21,7 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
   const { run, pending } = useAction();
   const checkinOpen = now() >= new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
   const active = reg && ["registered", "checked_in", "waitlist"].includes(reg.status);
+  const needsCheckin = !!reg && t.pace !== "ventana" && (reg.status === "registered" || (reg.status === "waitlist" && !reg.checked_in_at));
 
   if (!me) {
     if (t.status !== "registration") return null;
@@ -54,15 +55,18 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
       <>
         <div className="row between box n4">
           {reg!.status === "checked_in" ? <Status tone="ok" icon="check">Check-in listo</Status>
-            : reg!.status === "waitlist" ? <Status tone="warn" icon="clock">En lista de espera</Status>
+            : reg!.status === "waitlist" ? <Status tone="warn" icon="clock">{reg!.checked_in_at ? "En espera · presente" : "En lista de espera"}</Status>
             : <Status tone="ok" icon="check">Estás inscrito</Status>}
-          <ActionButton className="link" action={() => unregister(t.id)} confirm="¿Cancelar tu inscripción?" ok="Cancelaste tu inscripción.">Cancelar</ActionButton>
         </div>
-        {t.policy !== "libre" && <Link href={`/torneo/${t.code}/mazo`} className="btn s">Declarar mazo</Link>}
-        {reg!.status === "registered" && t.pace !== "ventana" && checkinOpen && <Link href={`/torneo/${t.code}/checkin`} className="btn p">Hacer check-in</Link>}
-        {reg!.status === "registered" && t.pace !== "ventana" && !checkinOpen && (
-          <span className="xs" style={{ textAlign: "center" }}>El check-in abre {t.checkin_minutes} min antes: {fmtDateTime(new Date(new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000))}</span>
+        {reg!.status === "waitlist" && t.pace !== "ventana" && (
+          <span className="xs">Si alguien no hace check-in, su lugar pasa al primero en espera que sí lo hizo.</span>
         )}
+        {t.policy !== "libre" && <Link href={`/torneo/${t.code}/mazo`} className="btn s">Declarar mazo</Link>}
+        {needsCheckin && checkinOpen && <Link href={`/torneo/${t.code}/checkin`} className="btn p">Hacer check-in</Link>}
+        {needsCheckin && !checkinOpen && (
+          <span className="xs" style={{ textAlign: "center" }}>El check-in abre {t.checkin_minutes} min antes: {fmtDateTime(new Date(new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000))}. Si no lo haces, cuenta como falta.</span>
+        )}
+        <ActionButton className="btn s" action={() => unregister(t.id)} confirm="¿Liberar tu lugar? Si te das de baja antes de que empiece, no cuenta como falta." ok="Liberaste tu lugar. Gracias por avisar.">Ya no puedo ir</ActionButton>
       </>
     );
   }

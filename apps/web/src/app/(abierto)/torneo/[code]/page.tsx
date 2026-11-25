@@ -99,6 +99,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
               {r.status === "checked_in" && t.status === "registration" && <Status tone="ok" icon="check">Listo</Status>}
               {r.status === "waitlist" && <span className="xs">En espera</span>}
               {r.status === "dropped" && <span className="xs">Se retiró</span>}
+              {r.status === "no_show" && <span className="xs">No se presentó</span>}
             </div>
           ))}
           {regs.length === 0 && <p className="sm">Aún no hay inscritos.</p>}
@@ -167,7 +168,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
         <EnrollActions
           t={{ id: t.id, code: t.code, name: t.name, status: t.status, starts_at: t.starts_at, checkin_minutes: t.checkin_minutes, pace: t.pace.kind, policy: effPolicy, rules: rest, format: formatLabel(t), category: cat.pr }}
           me={me ? { id: me.id } : null}
-          reg={mine ? { status: mine.status } : null}
+          reg={mine ? { status: mine.status, checked_in_at: mine.checked_in_at } : null}
           matchId={myMatch?.id}
         />
       </div>

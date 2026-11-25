@@ -13,7 +13,8 @@ export default async function Plataforma() {
   const me = await requireStaffArea();
   if (!me.isSuperadmin) redirect("/staff");
   const supabase = await supabaseServer();
-  const [{ data: pending }, { data: roles }, { data: reports }, { count: players }] = await Promise.all([
+  const [{ data: metrics }, { data: pending }, { data: roles }, { data: reports }, { count: players }] = await Promise.all([
+    supabase.rpc("platform_metrics"),
     supabase.from("tournaments").select("id,name,category,starts_at,capacity,organizer:profiles!tournaments_organizer_id_fkey(username)").eq("status", "pending_approval"),
     supabase.from("platform_roles").select("role,user_id,profile:profiles!platform_roles_user_id_fkey(username)"),
     supabase.from("mod_reports").select("id,kind,detail,created_at,target_user,target:profiles!mod_reports_target_user_fkey(username)").eq("status", "open").order("created_at"),
@@ -22,6 +23,7 @@ export default async function Plataforma() {
   return (
     <>
       <h1 className="t1">Plataforma</h1>
+      <Metrics m={metrics as M | null} />
       <div className="grid3">
         <div className="box n4 col" style={{ gap: 10 }}>
           <b className="t2">{me.season?.name ?? "Sin temporada"}</b>
@@ -63,5 +65,49 @@ export default async function Plataforma() {
         </div>
       </div>
     </>
+  );
+}
+
+type M = {
+  cuentas: number; perfiles: number; con_id_amigo: number; jugaron_1: number; jugaron_2: number; activos_7: number; activos_30: number;
+  jugaron_30: number; repiten_semana: number; asistencia: { llegaron: number; faltas: number }; sin_registro_completo: number; aviso_inactividad: number;
+};
+
+/** Actividad real: cuántos juegan, no cuántos se registraron. */
+function Metrics({ m }: { m: M | null }) {
+  if (!m) return null;
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
+  const funnel: [string, number][] = [["Crearon cuenta", m.cuentas], ["Completaron su perfil", m.perfiles], ["Jugaron 1 torneo", m.jugaron_1], ["Jugaron 2 o más", m.jugaron_2]];
+  const totalAsis = m.asistencia.llegaron + m.asistencia.faltas;
+  return (
+    <section className="col" style={{ gap: 12 }} aria-labelledby="act-h">
+      <span id="act-h" className="lbl">Actividad</span>
+      <div className="grid4">
+        {[["Activos 7 días", m.activos_7], ["Activos 30 días", m.activos_30], ["Jugaron en 30 días", m.jugaron_30], ["Repiten semana a semana", m.repiten_semana]].map(([k, v]) => (
+          <div key={k} className="box n4 col" style={{ gap: 2 }}><b className="px20 lime" style={{ fontSize: 40, lineHeight: 1 }}>{v}</b><span className="xs">{k}</span></div>
+        ))}
+      </div>
+      <div className="grid2">
+        <div className="box n4 col" style={{ gap: 10 }}>
+          <b className="t2">Embudo</b>
+          {funnel.map(([k, v], i) => (
+            <div key={k} className="col" style={{ gap: 4 }}>
+              <div className="row between sm"><span>{k}</span><b style={{ color: "var(--ink)" }}>{v}{i > 0 ? ` · ${pct(v, funnel[i - 1]![1])}` : ""}</b></div>
+              <div className="bar" aria-hidden="true"><i style={{ width: pct(v, m.cuentas) === "—" ? "0%" : pct(v, m.cuentas) }} /></div>
+            </div>
+          ))}
+          <span className="xs">El porcentaje es contra el paso anterior: ahí ves dónde se cae la gente.</span>
+        </div>
+        <div className="box n4 col" style={{ gap: 10 }}>
+          <b className="t2">Asistencia y limpieza</b>
+          <div className="row between sm"><span>Asistencia en la temporada</span><b style={{ color: "var(--ink)" }}>{pct(m.asistencia.llegaron, totalAsis)}</b></div>
+          <div className="row between sm"><span>Faltas sin aviso</span><b style={{ color: "var(--ink)" }}>{m.asistencia.faltas}</b></div>
+          <div className="row between sm"><span>Con ID de amigo</span><b style={{ color: "var(--ink)" }}>{m.con_id_amigo}</b></div>
+          <div className="row between sm"><span>Registro sin terminar</span><b style={{ color: "var(--ink)" }}>{m.sin_registro_completo}</b></div>
+          <div className="row between sm"><span>Avisadas por inactividad</span><b style={{ color: "var(--ink)" }}>{m.aviso_inactividad}</b></div>
+          <span className="xs">Registros sin terminar se borran a los 7 días. Cuentas sin uso en 12 meses reciben aviso y se borran 30 días después si no vuelven.</span>
+        </div>
+      </div>
+    </section>
   );
 }
