@@ -18,3 +18,4 @@ export async function reportUser(userId: string, kind: string, detail?: string) 
 export async function markRead(ids?: number[]) { return callRpc("mark_notifications_read", { p_ids: ids ?? null }); }
 export async function savePush(endpoint: string, p256dh: string, auth: string) { return callRpc("save_push_subscription", { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth }); }
 export async function deletePush(endpoint: string) { return callRpc("delete_push_subscription", { p_endpoint: endpoint }); }
+export async function pushPublicKey() { return callRpc<string | null>("push_public_key"); }

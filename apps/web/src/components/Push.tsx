@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { deletePush, savePush } from "@/actions/profile";
+import { deletePush, pushPublicKey, savePush } from "@/actions/profile";
 import { useToast } from "@/components/client";
 import { Icon } from "@/components/Icon";
 
-const KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
 function b64ToBytes(b64: string) {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -24,7 +23,7 @@ export function usePushState() {
   const [state, setState] = useState<"loading" | "unsupported" | "needs-install" | "off" | "on" | "denied">("loading");
   useEffect(() => {
     (async () => {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !KEY) {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         const ios = /iphone|ipad/i.test(navigator.userAgent);
         const standalone = window.matchMedia("(display-mode: standalone)").matches;
         return setState(ios && !standalone ? "needs-install" : "unsupported");
@@ -40,8 +39,10 @@ export function usePushState() {
 export async function enablePush(): Promise<string | null> {
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return "Sin permiso no podemos avisarte de tus rondas.";
+  const key = await pushPublicKey();
+  if (!key.ok || !key.data) return "Los avisos todavía no están listos. Inténtalo en un minuto.";
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(KEY!) });
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key.data) });
   const j = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
   const r = await savePush(j.endpoint, j.keys.p256dh, j.keys.auth);
   return r.ok ? null : r.error;
