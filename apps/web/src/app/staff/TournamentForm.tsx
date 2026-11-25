@@ -37,6 +37,12 @@ function Seg<T extends string | number>({ value, options, onChange, label }: { v
 /** Explicaciones del ícono de información de cada campo. */
 const m = PR_RULES.multiplier;
 const INFO: Record<string, [string, string][]> = {
+  nombres: [
+    ["Nombre del torneo", "Sin marcas como Pokémon, Nintendo o PTCG, y sin palabras que lo hagan parecer oficial: oficial, regional, nacional o mundial."],
+    ["Club u organización", "Puede llevar Pokémon (por ejemplo, Pokémon León), pero no Nintendo, The Pokémon Company, Play! Pokémon ni oficial, regional, nacional o mundial."],
+    ["Todos los textos", "Sin groserías ni datos de contacto: teléfonos, correos, enlaces o usuarios de otras redes."],
+    ["Tu responsabilidad", "Respondes por los nombres y textos de tu torneo. Reta puede cambiarlos si confunden o si recibe una queja, y te avisa."],
+  ],
   categoria: [
     ["Casual", "Para jugar por diversión. No da PR ni medallas."],
     ["Comunitario", `La liga de tu comunidad. PR ×${m.comunitario} y medallas si hay al menos ${PR_RULES.minAccountPlayers} jugadores con cuenta.`],
@@ -150,7 +156,7 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
         <section className="col" style={{ gap: 12 }}>
           <span className="lbl">Lo básico</span>
           <div className="grid2" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
-            <div className="fld"><label htmlFor="n">Nombre</label><input id="n" className="inp" value={f.name} maxLength={60} onChange={(e) => set("name", e.target.value)} placeholder="Copa Nocturna #13" /></div>
+            <div className="fld"><InfoLabel k="nombres" text="Nombre" htmlFor="n" {...il} /><input id="n" className="inp" value={f.name} maxLength={60} onChange={(e) => set("name", e.target.value)} placeholder="Copa Nocturna #13" /></div>
             <div className="fld"><label htmlFor="c">Club u organización</label><input id="c" className="inp" value={f.club} maxLength={40} onChange={(e) => set("club", e.target.value)} /></div>
           </div>
           <div className="fld"><InfoLabel k="categoria" text="Categoría" {...il} />

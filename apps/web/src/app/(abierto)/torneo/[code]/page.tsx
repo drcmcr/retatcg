@@ -164,6 +164,10 @@ export default async function Torneo({ params, searchParams }: { params: Promise
         );
       })()}
 
+      <p className="xs" style={{ color: "var(--ink-3)" }}>
+        Torneo organizado por {t.club ? `${t.club}` : "su organizador"}, no por Reta. Reta y este torneo no están afiliados, patrocinados ni aprobados por The Pokémon Company ni Nintendo. Los premios los entrega quien organiza. <Link href="/legal/terminos" className="cyan">Términos</Link>
+      </p>
+
       <div className="stick-bottom col" style={{ gap: 10, marginTop: "auto" }}>
         <EnrollActions
           t={{ id: t.id, code: t.code, name: t.name, status: t.status, starts_at: t.starts_at, checkin_minutes: t.checkin_minutes, pace: t.pace.kind, policy: effPolicy, rules: rest, format: formatLabel(t), category: cat.pr }}

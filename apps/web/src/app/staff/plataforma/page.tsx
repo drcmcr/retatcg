@@ -5,6 +5,7 @@ import { requireStaffArea } from "@/lib/staff";
 import { daysUntil, fmtDate, fmtDateTime } from "@/lib/format";
 import { CATEGORY } from "@/lib/game";
 import { supabaseServer } from "@/lib/supabase/server";
+import { Flagged, NameTools, TermList, type Flag, type Term } from "./Names";
 import { RoleForm } from "./RoleForm";
 
 export const metadata = { title: "Plataforma" };
@@ -13,18 +14,20 @@ export default async function Plataforma() {
   const me = await requireStaffArea();
   if (!me.isSuperadmin) redirect("/staff");
   const supabase = await supabaseServer();
-  const [{ data: metrics }, { data: pending }, { data: roles }, { data: reports }, { count: players }] = await Promise.all([
+  const [{ data: metrics }, { data: pending }, { data: roles }, { data: reports }, { count: players }, { data: terms }, { data: flagged }] = await Promise.all([
     supabase.rpc("platform_metrics"),
     supabase.from("tournaments").select("id,name,category,starts_at,capacity,organizer:profiles!tournaments_organizer_id_fkey(username)").eq("status", "pending_approval"),
     supabase.from("platform_roles").select("role,user_id,profile:profiles!platform_roles_user_id_fkey(username)"),
     supabase.from("mod_reports").select("id,kind,detail,created_at,target_user,target:profiles!mod_reports_target_user_fkey(username)").eq("status", "open").order("created_at"),
     supabase.from("player_seasons").select("user_id", { count: "exact", head: true }).eq("season_id", me.season?.id ?? 1),
+    supabase.from("blocked_terms").select("id,term,kind,fields,whole_word").order("term"),
+    supabase.rpc("admin_flagged_names"),
   ]);
   return (
     <>
       <h1 className="t1">Plataforma</h1>
       <Metrics m={metrics as M | null} />
-      <div className="grid3">
+      <div className="grid3 stack1">
         <div className="box n4 col" style={{ gap: 10 }}>
           <b className="t2">{me.season?.name ?? "Sin temporada"}</b>
           {me.season && <><div className="row between sm"><span>Termina</span><b style={{ color: "var(--ink)" }}>{fmtDate(me.season.endsAt)}</b></div>
@@ -64,6 +67,25 @@ export default async function Plataforma() {
           {!reports?.length && <span className="sm">Sin reportes abiertos.</span>}
         </div>
       </div>
+      <section className="col" style={{ gap: 12 }} aria-labelledby="nom-h">
+        <span id="nom-h" className="lbl">Nombres y textos</span>
+        <p className="sm" style={{ margin: 0 }}>Un solo filtro revisa usuarios, invitados, nombres de torneo y club, notas, premios y anuncios. Pokémon se permite en el club, no en el torneo.</p>
+        <div className="grid3 stack1">
+          <div className="box n4 col" style={{ gap: 10 }}>
+            <b className="t2">Por revisar · {(flagged as Flag[] | null)?.length ?? 0}</b>
+            <span className="xs">Nombres creados antes de un cambio en la lista que ya no pasan el filtro.</span>
+            <Flagged items={(flagged as Flag[] | null) ?? []} />
+          </div>
+          <div className="box n4 col" style={{ gap: 10 }}>
+            <b className="t2">Lista del filtro</b>
+            <TermList terms={(terms as Term[] | null) ?? []} />
+          </div>
+          <div className="box n4 col" style={{ gap: 10 }}>
+            <b className="t2">Herramientas</b>
+            <NameTools />
+          </div>
+        </div>
+      </section>
     </>
   );
 }

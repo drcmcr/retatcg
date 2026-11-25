@@ -70,7 +70,11 @@ describe("cuentas", () => {
     await newUser("kairo_mx");
     const [u] = await sql`insert into auth.users (email) values ('otro@prueba.mx') returning id`;
     await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('KAIRO_MX', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/ocupado/);
-    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('puto123', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/3 a 16/);
+    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('puto123', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/no se permiten/);
+    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('p.u.t.o', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/no se permiten/);
+    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('P0k3m0n_mx', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/marcas/);
+    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('juez_ana', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/reservado/);
+    await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('pu', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/3 a 16/);
   });
 
   it("los datos privados solo los ve su dueño", async () => {
@@ -313,5 +317,53 @@ describe("cuentas inactivas y métricas", () => {
     expect(r.borradas).toBe(1);
     const [after] = await sql`select user_id, guest_name from public.registrations where id = ${reg!.id}`;
     expect(after).toMatchObject({ user_id: null, guest_name: "Jugador eliminado" });
+  });
+});
+
+describe("nombres y textos", () => {
+  let org: string, admin: string;
+  const base = { category: "casual", format: "swiss", swiss_rounds: 1, starts_at: new Date(Date.now() + 86_400_000).toISOString(), pace: { kind: "en_vivo" } };
+  const create = (uid: string, extra: Record<string, unknown>) =>
+    as(uid, (tx) => tx`select public.create_tournament(${sql.json({ ...base, ...extra } as never)}) as id`);
+  beforeAll(async () => {
+    org = await newUser("org_nombres");
+    admin = await newUser("adm_nombres");
+    await sql`insert into public.platform_roles (user_id, role) values (${org}, 'organizer'), (${admin}, 'superadmin')`;
+  });
+
+  it("Pokémon se permite en el club pero no en el torneo; nada de contacto ni groserías", async () => {
+    await expect(create(org, { name: "Copa Pokémon León" })).rejects.toThrow(/nombre del torneo no puede usar marcas/);
+    await expect(create(org, { name: "Regional Bajío" })).rejects.toThrow(/parecer oficial/);
+    await expect(create(org, { name: "Copa León", club: "Club Nintendo" })).rejects.toThrow(/club no puede usar marcas/);
+    await expect(create(org, { name: "Copa León", notes: "Dudas al 55 1234 5678" })).rejects.toThrow(/teléfonos/);
+    await expect(create(org, { name: "Copa León", prize_list: [{ place: "1", kind: "otro", detail: "un pinche premio" }] })).rejects.toThrow(/detalle de un premio/);
+    const [t] = await create(org, { name: "Copa León", club: "Pokémon León", notes: "Inicio 18:30, 3 rondas. Pase premium de Pokémon TCG Pocket al 1er lugar." });
+    expect(t!.id).toBeTruthy();
+    await expect(as(org, (tx) => tx`select public.set_announcement(${t!.id}, 'escríbanme por whatsapp')`)).rejects.toThrow(/anuncio/);
+    await as(org, (tx) => tx`select public.publish_tournament(${t!.id})`);
+    await expect(as(org, (tx) => tx`select public.add_guest(${t!.id}, 'Mierda')`)).rejects.toThrow(/nombre del invitado tiene palabras/);
+    const [g] = await as(org, (tx) => tx`select public.add_guest(${t!.id}, 'Juan Pérez') as id`);
+    expect(g!.id).toBeTruthy();
+  });
+
+  it("el superadmin edita la lista, revisa nombres viejos y renombra", async () => {
+    const [{ id }] = await create(org, { name: "Copa Tlaloc", club: "Los Tlalocs" });
+    const [{ code }] = await sql`select code from public.tournaments where id = ${id}`;
+    await expect(as(org, (tx) => tx`select public.admin_add_term('tlaloc', 'marca', '{torneo,club}', false)`)).rejects.toThrow(/superadmin/);
+    await as(admin, (tx) => tx`select public.admin_add_term('tlaloc', 'marca', '{torneo,club}', false)`);
+    const flagged = await as(admin, (tx) => tx`select * from public.admin_flagged_names()`);
+    expect(flagged.map((f) => f.value)).toEqual(expect.arrayContaining(["Copa Tlaloc", "Los Tlalocs"]));
+    await as(admin, (tx) => tx`select public.admin_rename_tournament(${code}, 'Copa del Valle')`);
+    const n = await as(admin, (tx) => tx`select public.admin_rename_club('los tlalocs', 'Los del Valle') as n`);
+    expect(n[0]!.n).toBe(1);
+    const [after] = await sql`select name, club from public.tournaments where id = ${id}`;
+    expect(after).toMatchObject({ name: "Copa del Valle", club: "Los del Valle" });
+    const notes = await sql`select title from public.notifications where user_id = ${org} and kind = 'moderacion'`;
+    expect(notes.length).toBe(2);
+    const terms = await as(org, (tx) => tx`select count(*)::int as n from public.blocked_terms`);
+    expect(terms[0]!.n).toBe(0);
+    const [{ tid }] = await as(admin, (tx) => tx`select id as tid from public.blocked_terms where norm = 'tlaloc'`);
+    await as(admin, (tx) => tx`select public.admin_remove_term(${tid})`);
+    expect((await as(admin, (tx) => tx`select public.admin_test_text('Copa Tlaloc', 'torneo') as r`))[0]!.r).toBeNull();
   });
 });

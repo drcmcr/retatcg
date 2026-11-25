@@ -18,9 +18,12 @@ const DOCS: Record<string, { title: string; body: string[] }> = {
   terminos: {
     title: "Términos de uso (beta)",
     body: [
-      "Reta es una herramienta gratuita para organizar y jugar torneos de Pokémon TCG Pocket. No está afiliada a The Pokémon Company, Nintendo, Creatures ni DeNA.",
+      "Reta es una herramienta gratuita para organizar y jugar torneos de Pokémon TCG Pocket. No está afiliada, patrocinada ni aprobada por The Pokémon Company, Nintendo, Creatures, GAME FREAK ni DeNA. Pokémon y TCG Pocket son marcas de sus respectivos dueños.",
       "Debes tener 18 años o más para usar la beta.",
       "No suplantes a otras personas, no uses nombres ofensivos y no manipules resultados. El staff puede sancionar, suspender o expulsar según el reglamento.",
+      "Organizadores y clubes: quien organiza un torneo responde por el nombre del torneo, el nombre de su club y los textos que publica (notas, premios y anuncios). No puede usar marcas ajenas de forma que haga creer que el torneo es oficial o que está afiliado, patrocinado o aprobado por el dueño de la marca, ni publicar datos de contacto. Los premios los ofrece y entrega quien organiza, no Reta.",
+      "Reta puede cambiar o quitar nombres y textos que no cumplan estas reglas, que generen confusión o que reciban una queja, y avisará al organizador.",
+      "Titulares de derechos: si crees que un nombre o contenido en Reta usa tu marca o tu obra sin permiso, escríbenos a retatcg.app@gmail.com con el enlace y una breve explicación. Lo revisamos y, si procede, lo retiramos a la brevedad.",
       "La beta puede cambiar, fallar o reiniciarse. Haremos lo posible por conservar tus resultados.",
     ],
   },

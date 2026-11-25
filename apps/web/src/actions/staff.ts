@@ -43,3 +43,10 @@ export async function setPlatformRole(username: string, role: "organizer" | "sup
 }
 export async function handleModReport(id: number, status: "resolved" | "dismissed") { return callRpc("handle_mod_report", { p_report: id, p_status: status }); }
 export async function moderateRename(userId: string) { return callRpc<string>("moderate_rename", { p_user: userId }); }
+export async function addBlockedTerm(term: string, kind: string, fields: string[], wholeWord: boolean) {
+  return callRpc<number>("admin_add_term", { p_term: term, p_kind: kind, p_fields: fields, p_whole_word: wholeWord });
+}
+export async function removeBlockedTerm(id: number) { return callRpc("admin_remove_term", { p_id: id }); }
+export async function testText(text: string, field: string) { return callRpc<string | null>("admin_test_text", { p_text: text, p_field: field }); }
+export async function adminRenameTournament(code: string, name: string) { return callRpc("admin_rename_tournament", { p_code: code, p_name: name }); }
+export async function adminRenameClub(oldName: string, newName: string) { return callRpc<number>("admin_rename_club", { p_old: oldName, p_new: newName }); }

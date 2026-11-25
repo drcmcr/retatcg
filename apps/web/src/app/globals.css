@@ -235,6 +235,7 @@ a.li:hover, button.li:hover { background: #22222C; }
   .main .t1 { font-size: 30px; }
   .grid2 { grid-template-columns: minmax(0, 1fr) !important; }
   .grid3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)) !important; }
+  .grid3.stack1 { grid-template-columns: minmax(0, 1fr) !important; }
   .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .ctrl { order: -1; position: static !important; }
   .main .btn.sm { min-height: 44px; }
