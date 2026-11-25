@@ -22,7 +22,8 @@ export function Onboarding({ seed }: { seed: string }) {
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [username, setUsername] = useState("");
-  const [available, setAvailable] = useState<boolean | null>(null);
+  const [check, setCheck] = useState<{ name: string; ok: boolean } | null>(null);
+  const available = check && check.name === username ? check.ok : null;
   const [pocketName, setPocketName] = useState("");
   const [friendId, setFriendId] = useState("");
   const [accept, setAccept] = useState(false);
@@ -39,9 +40,8 @@ export function Onboarding({ seed }: { seed: string }) {
   }, [day, month, year]);
 
   useEffect(() => {
-    setAvailable(null);
     if (!/^[A-Za-z0-9._]{3,16}$/.test(username)) return;
-    const id = setTimeout(async () => setAvailable(await checkUsername(username)), 400);
+    const id = setTimeout(async () => setCheck({ name: username, ok: await checkUsername(username) }), 400);
     return () => clearTimeout(id);
   }, [username]);
 

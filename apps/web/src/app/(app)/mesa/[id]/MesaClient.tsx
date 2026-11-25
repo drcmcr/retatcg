@@ -9,6 +9,7 @@ import { Countdown, CopyButton, useAction } from "@/components/client";
 import { Icon } from "@/components/Icon";
 import { Status } from "@/components/ui";
 import { fmtDateTime, fmtTime, relTime } from "@/lib/format";
+import { now } from "@/lib/time";
 
 type Props = {
   match: {
@@ -264,7 +265,7 @@ function DropSheet({ matchId, rival, onDone }: { matchId: string; rival: string;
 function Coordinate(p: Props) {
   const m = p.match;
   const { run, pending } = useAction();
-  const deadline = p.round.endsAt ? new Date(p.round.endsAt).getTime() + p.round.extension * 3_600_000 : Date.now() + 24 * 3_600_000;
+  const deadline = p.round.endsAt ? new Date(p.round.endsAt).getTime() + p.round.extension * 3_600_000 : now() + 24 * 3_600_000;
   const slots = useMemo(() => {
     const out: Date[] = [];
     const start = new Date(); start.setMinutes(0, 0, 0); start.setHours(start.getHours() + 1);

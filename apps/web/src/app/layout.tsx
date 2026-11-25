@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { ToastProvider } from "@/components/client";
+import { ServiceWorker } from "@/components/Push";
 import "./globals.css";
 
 const bricolage = localFont({ src: "../fonts/bricolage.woff2", variable: "--font-bricolage", weight: "200 800", display: "swap" });
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es-MX" className={`${bricolage.variable} ${jersey15.variable} ${jersey20.variable} ${jetbrains.variable}`}>
       <body>
         <ToastProvider>{children}</ToastProvider>
+        <ServiceWorker />
       </body>
     </html>
   );

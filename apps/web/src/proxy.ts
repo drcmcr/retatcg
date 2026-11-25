@@ -6,13 +6,18 @@ const PUBLIC = [/^\/$/, /^\/entrar/, /^\/auth\//, /^\/t\//, /^\/torneos$/, /^\/t
 
 /** Refresca la sesión en cada petición y manda a /entrar a quien no tiene sesión en una ruta privada. */
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // La ruta viaja en un encabezado para que los layouts sepan en qué torneo están.
+  const reqHeaders = new Headers(request.headers);
+  reqHeaders.set("x-pathname", request.nextUrl.pathname);
+  let response = NextResponse.next({ request: { headers: reqHeaders } });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
         for (const { name, value } of list) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        const h = new Headers(request.headers);
+        h.set("x-pathname", request.nextUrl.pathname);
+        response = NextResponse.next({ request: { headers: h } });
         for (const { name, value, options } of list) response.cookies.set(name, value, options);
       },
     },

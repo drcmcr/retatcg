@@ -31,7 +31,7 @@ export default async function Caso({ params }: { params: Promise<{ id: string }>
       <div className="row between xs"><span>Abierto</span><span>En revisión</span><span>Resuelto</span></div>
       <div className="box n4 col" style={{ gap: 4 }}>
         <span className="lbl" style={{ fontSize: 16 }}>Motivo</span>
-        <b>{KIND[c.kind] ?? c.kind}{c.match ? ` · Mesa ${(c.match as { table_no: number }).table_no}` : ""}</b>
+        <b>{KIND[c.kind] ?? c.kind}{c.match ? ` · Mesa ${(c.match as unknown as { table_no: number }).table_no}` : ""}</b>
         {c.resolution && <span className="sm ok">Resolución: {c.resolution}</span>}
       </div>
       <div className="list">

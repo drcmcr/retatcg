@@ -47,3 +47,5 @@ export function formatLabel(t: { format: string; swiss_rounds: number; top_cut: 
   const swiss = `Suizo ${t.swiss_rounds} rondas Bo${t.swiss_best_of}`;
   return t.format === "swiss_topcut" ? `${swiss} · top ${t.top_cut} Bo${t.top_best_of}` : swiss;
 }
+
+export const CASE_KIND: Record<string, string> = { marcador: "Marcador", ausente: "Rival ausente", desconexion: "Desconexión", conducta: "Conducta", juez: "Llamada al juez", plazo: "Plazo vencido" };

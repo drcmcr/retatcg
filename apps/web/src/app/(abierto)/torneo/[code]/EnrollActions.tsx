@@ -6,6 +6,7 @@ import { ActionButton, useAction } from "@/components/client";
 import { Icon } from "@/components/Icon";
 import { Status } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
+import { now } from "@/lib/time";
 
 type Props = {
   t: { id: string; code: string; name: string; status: string; starts_at: string; checkin_minutes: number; pace: string; policy: string; rules: string[]; format: string; category: string };
@@ -18,7 +19,7 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
   const [sheet, setSheet] = useState(false);
   const [accept, setAccept] = useState(false);
   const { run, pending } = useAction();
-  const checkinOpen = Date.now() >= new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
+  const checkinOpen = now() >= new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
   const active = reg && ["registered", "checked_in", "waitlist"].includes(reg.status);
 
   if (!me) {
