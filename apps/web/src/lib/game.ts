@@ -42,6 +42,23 @@ export const CATEGORY: Record<string, { label: string; pill: string; pr: string 
 export const PACE_LABEL: Record<string, string> = { en_vivo: "En vivo", jornadas: "Por jornadas", ventana: "Por ventana" };
 export const DECK_LABEL: Record<string, string> = { libre: "Libre", por_ronda: "Por ronda", fijo: "Fijo" };
 
+/** Premios: para qué lugar y de qué tipo. Reta solo los muestra; los entrega el organizador. */
+export type Prize = { place: string; kind: string; detail: string };
+export const PRIZE_PLACES: [string, string][] = [
+  ["1", "Campeón"], ["2", "2.º lugar"], ["3", "3.er lugar"], ["top4", "Top 4"], ["top8", "Top 8"], ["todos", "Todos los participantes"], ["mencion", "Mención especial"],
+];
+export const PRIZE_PLACE_LABEL = Object.fromEntries(PRIZE_PLACES) as Record<string, string>;
+export const PRIZE_KINDS: { kind: string; label: string; icon: "card" | "ticket" | "coin" | "box" | "gift"; hint: string }[] = [
+  { kind: "carta", label: "Carta digital", icon: "card", hint: "Ej. carta ex de la expansión actual, por intercambio" },
+  { kind: "pase", label: "Pase Premium", icon: "ticket", hint: "Ej. 1 mes de Pase Premium" },
+  { kind: "dinero", label: "Dinero", icon: "coin", hint: "Ej. $500 MXN por transferencia" },
+  { kind: "fisico", label: "Premio físico", icon: "box", hint: "Ej. tapete de juego y fundas" },
+  { kind: "otro", label: "Otro", icon: "gift", hint: "Describe el premio" },
+];
+export const PRIZE_KIND = Object.fromEntries(PRIZE_KINDS.map((k) => [k.kind, k])) as Record<string, (typeof PRIZE_KINDS)[number]>;
+const PLACE_ORDER = PRIZE_PLACES.map(([p]) => p);
+export const sortPrizes = (list: Prize[]) => [...list].sort((a, b) => PLACE_ORDER.indexOf(a.place) - PLACE_ORDER.indexOf(b.place));
+
 export function formatLabel(t: { format: string; swiss_rounds: number; top_cut: number; swiss_best_of: number; top_best_of: number }): string {
   if (t.format === "single_elim") return `Eliminación directa · Bo${t.top_best_of}`;
   const swiss = `Suizo ${t.swiss_rounds} rondas Bo${t.swiss_best_of}`;

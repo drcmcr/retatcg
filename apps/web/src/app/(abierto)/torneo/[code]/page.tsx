@@ -1,3 +1,4 @@
+import { PrizeList } from "@/components/Prizes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LiveRefresh } from "@/components/client";
@@ -73,7 +74,6 @@ export default async function Torneo({ params, searchParams }: { params: Promise
             ["Restricciones", rest.length ? rest.join(". ") : "Ninguna"],
             ["Rango mínimo", t.min_rank ? RANK_NAMES[t.min_rank] : "Ninguno"],
             ["Cupo", `${taken} / ${t.capacity}`],
-            ...(t.prizes ? [["Premios", t.prizes]] : []),
           ].map(([k, v]) => (
             <div key={k} className="row between sm" style={{ alignItems: "flex-start", gap: 16 }}>
               <span>{k}</span><b style={{ color: "var(--ink)", textAlign: "right" }}>{v}</b>
@@ -86,6 +86,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
             </div>
           )}
           {t.notes && <p className="sm" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{t.notes}</p>}
+          <div style={{ marginTop: 10 }}><PrizeList list={t.prize_list ?? []} note={t.prizes} /></div>
         </div>
       )}
 

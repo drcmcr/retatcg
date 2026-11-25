@@ -99,6 +99,8 @@ export const CHAPTERS: Chapter[] = [
           <li><b>Fijo:</b> declaras un mazo para todo el torneo.</li>
         </ul>
         <p>El torneo puede tener restricciones (cartas prohibidas, solo ex, sin Mega ex, rango mínimo). Las ves en la pestaña Info. Tu mazo solo lo ve el staff, que lo aprueba o te pide cambiarlo.</p>
+        <h2>Premios</h2>
+        <p>Si el torneo tiene premios, los ves en la pestaña Info: qué se lleva cada lugar (cartas digitales, Pase Premium, dinero, premios físicos u otros) y cómo se entregan. Los entrega el organizador; Reta no participa en su entrega.</p>
         <Tip>¿No puedes seguir? Usa <b>Retirarme del torneo</b> desde la página del torneo. Así tu rival no espera y la tabla se mantiene limpia.</Tip>
       </>
     ),
@@ -233,6 +235,7 @@ export const CHAPTERS: Chapter[] = [
           <li><b>Staff, Crear torneo.</b> Nombre, fecha, cupo y categoría. Los Clasificatorios y Mayores esperan la aprobación del superadmin.</li>
           <li><b>Formato y ritmo:</b> suizo, suizo con top cut o eliminación; Bo1 o Bo3; en vivo, por jornadas o por ventana. Abajo ves cuánto duraría en el peor caso.</li>
           <li><b>Mazos:</b> libre, por ronda o fijo, y restricciones si las quieres.</li>
+          <li><b>Premios (opcional):</b> uno por lugar, con tipo y descripción, y cómo se entregan. Si lo marcas como <b>Solo con invitación</b>, el torneo no aparece en la lista y solo entra quien tenga el código o el QR.</li>
           <li><b>Crear y abrir inscripción</b>, o guárdalo como borrador.</li>
         </ol>
         <h2>Durante el torneo</h2>

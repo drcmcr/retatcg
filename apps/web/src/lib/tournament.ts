@@ -1,4 +1,5 @@
 import "server-only";
+import type { Prize } from "@/lib/game";
 import { computeStandings, type MatchRecord } from "@reta/torneo";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -7,7 +8,7 @@ export type T = {
   swiss_rounds: number; top_cut: number; swiss_best_of: number; top_best_of: number;
   pace: { kind: string; windowHours?: number; sessions?: { startsAt: string; rounds: number[] }[] };
   deck_policy: string; restrictions: Record<string, unknown>; capacity: number; starts_at: string; checkin_minutes: number;
-  min_rank: number; confirm_minutes: number | null; round_minutes: number | null; prizes: string | null; notes: string | null; invite_only: boolean; announcement: string | null; announcement_at: string | null;
+  min_rank: number; confirm_minutes: number | null; round_minutes: number | null; prizes: string | null; prize_list: Prize[]; notes: string | null; invite_only: boolean; announcement: string | null; announcement_at: string | null;
   lot_seed: string; stage: string | null; current_round: number; organizer_id: string; season_id: number | null;
 };
 export type Reg = { id: string; user_id: string | null; guest_name: string | null; status: string; created_at: string; checked_in_at: string | null; username: string | null; rank_at_start: number | null };

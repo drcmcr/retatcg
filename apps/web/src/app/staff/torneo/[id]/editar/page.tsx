@@ -15,7 +15,7 @@ export default async function Editar({ params }: { params: Promise<{ id: string 
     swiss_best_of: t.swiss_best_of, top_best_of: t.top_best_of, pace: t.pace.kind, windowHours: t.pace.windowHours ?? 24,
     sessions: (t.pace.sessions ?? []).map((s) => ({ startsAt: toLocal(s.startsAt), rounds: s.rounds.join(",") })),
     starts_at: toLocal(t.starts_at), checkin_minutes: t.checkin_minutes, capacity: t.capacity, deck_policy: t.deck_policy,
-    restrictions: t.restrictions, min_rank: t.min_rank, prizes: t.prizes ?? "", notes: t.notes ?? "", round_minutes: t.round_minutes ? String(t.round_minutes) : "", expected: t.capacity, invite_only: !!t.invite_only,
+    restrictions: t.restrictions, min_rank: t.min_rank, prizes: t.prizes ?? "", prize_list: t.prize_list ?? [], notes: t.notes ?? "", round_minutes: t.round_minutes ? String(t.round_minutes) : "", expected: t.capacity, invite_only: !!t.invite_only,
   };
   return (
     <>

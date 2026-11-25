@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { TCard } from "@/components/TournamentCard";
 
-const COLS = "id,code,name,club,category,status,starts_at,pace,format,swiss_rounds,top_cut,swiss_best_of,top_best_of,capacity,min_rank,current_round";
+const COLS = "id,code,name,club,category,status,starts_at,pace,format,swiss_rounds,top_cut,swiss_best_of,top_best_of,capacity,min_rank,current_round,prize_list";
 
 /** Torneos con su conteo de lugares tomados. */
 export async function tournamentCards(filter: { status: string[]; ids?: string[]; category?: string; limit?: number; ascending?: boolean }): Promise<(TCard & { id: string })[]> {
