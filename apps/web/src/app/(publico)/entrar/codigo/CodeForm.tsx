@@ -62,8 +62,8 @@ export function CodeForm({ email, next }: { email: string; next?: string }) {
       <div className="tb">
         <Link href="/entrar" className="ib" aria-label="Volver"><Icon name="back" /></Link>
       </div>
-      <h1 className="t1">Escribe tu código</h1>
-      <p className="sm">Lo mandamos a <b style={{ color: "var(--ink)" }}>{email}</b>. Vence en 10 minutos. Si llegó un enlace, también funciona.</p>
+      <h1 className="t1">Revisa tu correo</h1>
+      <p className="sm">Lo mandamos a <b style={{ color: "var(--ink)" }}>{email}</b>. Toca el enlace del correo <b style={{ color: "var(--ink)" }}>en este mismo navegador</b>. Si el correo trae un código de 6 dígitos, escríbelo aquí.</p>
       <fieldset className="otp" style={{ border: 0, padding: 0, margin: 0 }} aria-label="Código de 6 dígitos">
         {digits.map((d, i) => (
           <input
@@ -87,8 +87,8 @@ export function CodeForm({ email, next }: { email: string; next?: string }) {
         {wait <= 0 ? (
           <button className="link" onClick={async () => {
             const r = await sendCode(email, next);
-            if (r.ok) { toast({ tone: "ok", text: "Te mandamos otro código." }); setWait(45); } else toast({ tone: "err", text: r.error });
-          }}>Reenviar código</button>
+            if (r.ok) { toast({ tone: "ok", text: "Te mandamos otro correo." }); setWait(45); } else toast({ tone: "err", text: r.error });
+          }}>Reenviar correo</button>
         ) : (
           <Link className="link" href="/entrar">Cambiar correo</Link>
         )}
