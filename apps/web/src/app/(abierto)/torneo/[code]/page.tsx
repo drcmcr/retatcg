@@ -45,6 +45,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
       <div className="row wrap" style={{ gap: 6 }}>
         <span className={`pill ${cat.pill}`}>{cat.label}</span>
         <span className="pill o">{cat.pr}</span>
+        {t.invite_only && <span className="pill o">Solo con invitación</span>}
         <span className="pill o">{PACE_LABEL[t.pace.kind]}</span>
         {t.status === "running" && <span className="pill l">En curso · R{t.current_round}</span>}
         {t.status === "finished" && <span className="pill o">Terminado</span>}

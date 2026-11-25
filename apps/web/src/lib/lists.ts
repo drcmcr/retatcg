@@ -9,6 +9,7 @@ export async function tournamentCards(filter: { status: string[]; ids?: string[]
   const supabase = await supabaseServer();
   let q = supabase.from("tournaments").select(COLS).in("status", filter.status).order("starts_at", { ascending: filter.ascending ?? true }).limit(filter.limit ?? 40);
   if (filter.ids) q = q.in("id", filter.ids.length ? filter.ids : ["00000000-0000-0000-0000-000000000000"]);
+  else q = q.eq("invite_only", false);
   if (filter.category) q = q.eq("category", filter.category);
   const { data } = await q;
   const list = (data ?? []) as unknown as (TCard & { id: string })[];

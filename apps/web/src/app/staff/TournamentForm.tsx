@@ -12,7 +12,7 @@ type Session = { startsAt: string; rounds: string };
 export type FormValue = {
   name: string; club: string; category: string; format: string; swiss_rounds: number; top_cut: number; swiss_best_of: number; top_best_of: number;
   pace: string; windowHours: number; sessions: Session[]; starts_at: string; checkin_minutes: number; capacity: number; deck_policy: string;
-  restrictions: Restrictions; min_rank: number; prizes: string; notes: string; round_minutes: string; expected: number;
+  restrictions: Restrictions; min_rank: number; prizes: string; notes: string; round_minutes: string; expected: number; invite_only: boolean;
 };
 
 const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -22,7 +22,7 @@ export function defaultForm(): FormValue {
   return {
     name: "", club: "", category: "comunitario", format: "swiss_topcut", swiss_rounds: 5, top_cut: 4, swiss_best_of: 1, top_best_of: 3,
     pace: "en_vivo", windowHours: 24, sessions: [{ startsAt: toLocal(d), rounds: "1,2,3" }], starts_at: toLocal(d), checkin_minutes: 30, capacity: 32,
-    deck_policy: "por_ronda", restrictions: {}, min_rank: 0, prizes: "", notes: "", round_minutes: "", expected: 24,
+    deck_policy: "por_ronda", restrictions: {}, min_rank: 0, prizes: "", notes: "", round_minutes: "", expected: 24, invite_only: false,
   };
 }
 
@@ -60,7 +60,7 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
     const base: Record<string, unknown> = {
       name: f.name, club: f.club, swiss_rounds: f.swiss_rounds, top_cut: f.top_cut, swiss_best_of: f.swiss_best_of, top_best_of: f.top_best_of,
       pace, starts_at: startsAt.toISOString(), checkin_minutes: f.checkin_minutes, capacity: f.capacity, min_rank: f.min_rank,
-      prizes: f.prizes, notes: f.notes, round_minutes: f.round_minutes,
+      prizes: f.prizes, notes: f.notes, round_minutes: f.round_minutes, invite_only: f.invite_only,
     };
     if (!locked) Object.assign(base, { category: f.category, format: f.format, deck_policy: f.deck_policy, restrictions: f.restrictions });
     return base;
@@ -158,6 +158,7 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
 
         <section className="col" style={{ gap: 12 }}>
           <span className="lbl">Detalles</span>
+          <label className="check"><input type="checkbox" checked={f.invite_only} onChange={(e) => set("invite_only", e.target.checked)} /><span className="cb">{f.invite_only && <Icon name="check" size={16} weight={3} />}</span><span>Solo con invitación<span className="xs" style={{ display: "block" }}>No aparece en la lista de torneos. Solo entra quien tenga el código o el QR.</span></span></label>
           <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <div className="fld"><label htmlFor="mr">Rango mínimo</label><select id="mr" className="inp" value={f.min_rank} onChange={(e) => set("min_rank", Number(e.target.value))}>{RANK_NAMES.slice(0, 6).map((r, i) => <option key={r} value={i}>{i === 0 ? "Ninguno" : r}</option>)}</select></div>
             <div className="fld"><label htmlFor="pz">Premios</label><input id="pz" className="inp" maxLength={200} value={f.prizes} onChange={(e) => set("prizes", e.target.value)} placeholder="Opcional" /></div>
