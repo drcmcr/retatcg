@@ -244,8 +244,8 @@ function DropSheet({ matchId, rival, onDone }: { matchId: string; rival: string;
     <>
       <b className="t2">¿Quién se desconectó?</b>
       <div className="seg">
-        <button aria-selected={who === "yo"} onClick={() => setWho("yo")}>Yo</button>
-        <button aria-selected={who === "rival"} onClick={() => setWho("rival")}>{rival}</button>
+        <button type="button" aria-pressed={who === "yo"} onClick={() => setWho("yo")}>Yo</button>
+        <button type="button" aria-pressed={who === "rival"} onClick={() => setWho("rival")}>{rival}</button>
       </div>
       <label className="check">
         <input type="checkbox" checked={returned} onChange={(e) => setReturned(e.target.checked)} />

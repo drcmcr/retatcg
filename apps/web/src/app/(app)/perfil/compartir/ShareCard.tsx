@@ -31,8 +31,8 @@ export function ShareCard({ username }: { username: string }) {
   return (
     <>
       <div className="seg">
-        <button aria-selected={f === "story"} onClick={() => setF("story")}>Historia 9:16</button>
-        <button aria-selected={f === "post"} onClick={() => setF("post")}>Publicación 4:5</button>
+        <button type="button" aria-pressed={f === "story"} onClick={() => setF("story")}>Historia 9:16</button>
+        <button type="button" aria-pressed={f === "post"} onClick={() => setF("post")}>Publicación 4:5</button>
       </div>
       <div className="chk n6" style={{ padding: 12, display: "grid", placeItems: "center" }}>
         <img src={src} alt="Vista previa de tu tarjeta de cazador" style={{ width: "100%", maxWidth: f === "story" ? 260 : 340, aspectRatio: f === "story" ? "9/16" : "4/5", background: "#0E0E12" }} />

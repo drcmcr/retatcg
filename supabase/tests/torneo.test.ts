@@ -75,6 +75,10 @@ describe("cuentas", () => {
     await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('P0k3m0n_mx', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/marcas/);
     await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('juez_ana', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/reservado/);
     await expect(as(u!.id, (tx) => tx`select public.complete_onboarding('pu', '1990-01-01', 'X', '1234567890123456')`)).rejects.toThrow(/3 a 16/);
+    // Un ".mx" en el usuario es normal; en las notas de un torneo sí cuenta como enlace.
+    expect((await sql`select public._text_issue('nebula.mx', 'usuario') as i`)[0]!.i).toBeNull();
+    expect((await sql`select public._text_issue('visita tcg.mx', 'texto') as i`)[0]!.i).toBe("contacto");
+    expect((await sql`select public._text_issue('pepe@mail.com', 'usuario') as i`)[0]!.i).toBe("contacto");
   });
 
   it("los datos privados solo los ve su dueño", async () => {
