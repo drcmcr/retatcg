@@ -11,7 +11,7 @@ import { Announcement } from "./Announcement";
 import { ShareBox } from "./ShareBox";
 import { Invites, type Invite } from "./Invites";
 import { supabaseServer } from "@/lib/supabase/server";
-import { qrPng, qrSvg, siteOrigin } from "@/lib/share";
+import { qrSvg, siteOrigin } from "@/lib/share";
 import { now } from "@/lib/time";
 
 export const metadata = { title: "Control del torneo" };
@@ -36,7 +36,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
   const sorted = [...current].sort((a, b) => order(a.status) - order(b.status) || a.table_no - b.table_no);
   const shareUrl = `${await siteOrigin()}/torneo/${t.code}`;
   const canShare = ["registration", "running"].includes(t.status);
-  const [svg, png] = canShare ? await Promise.all([qrSvg(shareUrl), qrPng(shareUrl)]) : ["", ""];
+  const svg = canShare ? await qrSvg(shareUrl) : "";
   const message = t.invite_only
     ? `${t.name}${t.club ? ` (${t.club})` : ""}, torneo con invitación en Reta. ${fmtDateTime(t.starts_at)}. Entra a la lista de espera aquí: ${shareUrl} · código ${t.code}`
     : `Te invito a ${t.name}${t.club ? ` (${t.club})` : ""}, torneo en Reta. ${fmtDateTime(t.starts_at)}. Inscríbete aquí: ${shareUrl} · código ${t.code}`;
@@ -104,7 +104,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
           </div>
           <div className="col" style={{ gap: 12 }}>
             {invitesBox}
-            <ShareBox id={t.id} url={shareUrl} code={t.code} svg={svg} png={png} message={message} inviteOnly={t.invite_only} />
+            <ShareBox id={t.id} url={shareUrl} code={t.code} svg={svg} message={message} inviteOnly={t.invite_only} />
             <Announcement id={t.id} current={t.announcement} />
             <ActionButton className="btn d" action={cancelTournament} args={[t.id]} confirm="¿Cancelar el torneo? Se avisa a todos los inscritos." ok="Torneo cancelado.">Cancelar torneo</ActionButton>
           </div>

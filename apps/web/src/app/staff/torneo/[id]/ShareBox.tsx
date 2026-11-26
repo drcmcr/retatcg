@@ -1,11 +1,42 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CopyButton, useToast } from "@/components/client";
 import { Icon } from "@/components/Icon";
 
 /** Compartir un torneo: enlace, mensaje listo para pegar, QR descargable y QR para proyectar. */
-export function ShareBox({ id, url, code, svg, png, message, inviteOnly }: { id: string; url: string; code: string; svg: string; png: string; message: string; inviteOnly?: boolean }) {
+export function ShareBox({ id, url, code, svg, message, inviteOnly }: { id: string; url: string; code: string; svg: string; message: string; inviteOnly?: boolean }) {
   const toast = useToast();
+  const qrUrl = `/staff/torneo/${id}/qr`;
+  const fileName = `reta-${code}.png`;
+  // La imagen se pide al abrir la pantalla: así el botón responde en el mismo toque (iPhone lo exige para compartir).
+  const [file, setFile] = useState<File | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(qrUrl).then((r) => (r.ok ? r.blob() : null)).then((b) => {
+      if (alive && b) setFile(new File([b], fileName, { type: "image/png" }));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [qrUrl, fileName]);
+  async function downloadQr() {
+    const phone = window.matchMedia("(pointer: coarse)").matches;
+    // En el teléfono: hoja de compartir con la imagen (ahí está "Guardar imagen").
+    if (phone && file && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: `QR ${code}` }); return; }
+      catch (e) { if ((e as Error).name === "AbortError") return; }
+    }
+    // En computadora (o si no se puede compartir): descarga el archivo.
+    if (file) {
+      const href = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = href; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
+      toast({ tone: "ok", text: "QR descargado." });
+      return;
+    }
+    window.location.href = qrUrl;
+  }
   async function share() {
     try {
       if (navigator.share) {
@@ -32,7 +63,7 @@ export function ShareBox({ id, url, code, svg, png, message, inviteOnly }: { id:
         <button type="button" className="btn p sm" onClick={share}><Icon name="share" size={18} />Compartir</button>
         <CopyButton text={url} label="Copiar enlace" />
         <CopyButton text={message} label="Copiar mensaje" />
-        <a className="btn s sm" href={png} download={`reta-${code}.png`}><Icon name="dl" size={18} />Descargar QR</a>
+        <button type="button" className="btn s sm" onClick={downloadQr}><Icon name="dl" size={18} />Descargar QR</button>
         <Link className="btn g sm" href={`/proyectar/${id}`}><Icon name="qr" size={18} />Proyectar QR</Link>
       </div>
       <span className="xs">{inviteOnly

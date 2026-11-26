@@ -15,7 +15,7 @@ export async function qrSvg(text: string) {
   return QRCode.toString(text, { type: "svg", margin: 2, errorCorrectionLevel: "M", color: { dark: "#0E0E12", light: "#FFFFFF" } });
 }
 
-export async function qrPng(text: string, width = 1024) {
-  return QRCode.toDataURL(text, { margin: 2, width, errorCorrectionLevel: "M", color: { dark: "#0E0E12", light: "#FFFFFF" } });
+export async function qrPngBuffer(text: string, width = 1024) {
+  return QRCode.toBuffer(text, { type: "png", margin: 2, width, errorCorrectionLevel: "M", color: { dark: "#0E0E12", light: "#FFFFFF" } });
 }
 
