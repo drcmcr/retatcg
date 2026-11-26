@@ -44,7 +44,9 @@ export function useAction() {
     (fn: () => Promise<Result>, opts: { ok?: string; then?: (data: unknown) => void } = {}) =>
       new Promise<Result>((resolve) => {
         start(async () => {
-          const r = await fn();
+          let r: Result;
+          // Sin conexión o con el servidor caído la acción lanza: también se avisa.
+          try { r = await fn(); } catch { r = { ok: false, error: "No hubo conexión con el servidor. Revisa tu internet e inténtalo de nuevo." }; }
           if (!r.ok) toast({ tone: "err", text: r.error });
           else {
             if (opts.ok) toast({ tone: "ok", text: opts.ok });

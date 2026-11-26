@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { declareDeck } from "@/actions/player";
 import { useAction } from "@/components/client";
 import { Icon } from "@/components/Icon";
@@ -14,6 +14,25 @@ export function DeckForm({ tournamentId, userId, round, rules, initialArchetype,
   const { run, pending } = useAction();
   const router = useRouter();
   const allChecked = checks.every(Boolean);
+  // Si Android recarga la página al abrir la galería, no se pierde lo que ya llenó.
+  const key = `reta:mazo:${tournamentId}:${round}`;
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(key) ?? "null") as { archetype?: string; checks?: boolean[] } | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restaurar borrador al montar
+      if (saved?.archetype) setArchetype(saved.archetype);
+      if (saved?.checks?.length === checks.length) setChecks(saved.checks);
+    } catch { /* nada */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
+  }, [key]);
+  useEffect(() => {
+    try { sessionStorage.setItem(key, JSON.stringify({ archetype, checks })); } catch { /* nada */ }
+  }, [key, archetype, checks]);
+  const missing = [
+    !path && "subir la captura",
+    archetype.trim().length < 2 && "escribir el arquetipo",
+    !allChecked && "marcar todas las casillas",
+  ].filter(Boolean) as string[];
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="fld">
@@ -37,9 +56,10 @@ export function DeckForm({ tournamentId, userId, round, rules, initialArchetype,
         ))}
       </div>
       <button className="btn p" disabled={!path || archetype.trim().length < 2 || !allChecked || pending}
-        onClick={() => run(() => declareDeck(tournamentId, round, archetype, path!), { ok: "Mazo enviado al staff.", then: () => router.push(`/torneo/${code}`) })}>
+        onClick={() => run(() => declareDeck(tournamentId, round, archetype, path!), { ok: "Mazo enviado al staff.", then: () => { try { sessionStorage.removeItem(key); } catch { /* nada */ } router.push(`/torneo/${code}`); } })}>
         {pending ? "Enviando…" : "Enviar mazo"}
       </button>
+      {missing.length > 0 && !pending && <span className="hint" role="status"><Icon name="info" size={15} />Para enviar falta: {missing.join(", ")}.</span>}
     </div>
   );
 }

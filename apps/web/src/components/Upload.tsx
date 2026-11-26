@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { reportClientError } from "@/actions/player";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Icon } from "@/components/Icon";
@@ -31,9 +31,14 @@ async function decode(file: File): Promise<{ src: CanvasImageSource; w: number; 
 }
 
 /** Reduce la captura a 1600 px de lado y JPEG antes de subirla (más rápido con datos móviles). */
+/** Algunos teléfonos se quedan pensando al decodificar fotos grandes: no esperamos más de 15 s. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`tardó más de ${ms / 1000} s`)), ms))]);
+}
+
 async function shrink(file: File): Promise<{ blob: Blob; type: string }> {
   try {
-    const img = await decode(file);
+    const img = await withTimeout(decode(file), 15_000);
     const scale = Math.min(1, 1600 / Math.max(img.w, img.h));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(img.w * scale));
@@ -52,6 +57,8 @@ async function shrink(file: File): Promise<{ blob: Blob; type: string }> {
   }
 }
 
+const pickKey = (t: string) => `reta:eligiendo-captura:${t}`;
+
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
 /** Sube una captura privada a <torneo>/<usuario>/… y devuelve su ruta. */
@@ -59,13 +66,35 @@ export function CaptureUpload({ tournamentId, userId, onUploaded, label = "Subir
   const id = useId();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Android a veces cierra la página mientras la galería está abierta y al volver la recarga:
+  // la imagen elegida se pierde sin ningún aviso. Si pasó, lo decimos y queda en los logs.
+  useEffect(() => {
+    try {
+      const at = Number(sessionStorage.getItem(pickKey(tournamentId)) ?? 0);
+      sessionStorage.removeItem(pickKey(tournamentId));
+      if (at && Date.now() - at < 10 * 60_000) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- aviso único al volver de la galería
+        setErr("Tu teléfono recargó la página mientras elegías la imagen y se perdió. Vuelve a intentarlo; si se repite, cierra otras apps abiertas o usa la computadora.");
+        void reportClientError("captura", `recarga al elegir imagen · ${navigator.userAgent}`).catch(() => {});
+      }
+    } catch { /* sin sessionStorage */ }
+    const el = document.getElementById(id);
+    const cancel = () => { try { sessionStorage.removeItem(pickKey(tournamentId)); } catch { /* nada */ } };
+    el?.addEventListener("cancel", cancel);
+    return () => el?.removeEventListener("cancel", cancel);
+  }, [tournamentId, id]);
+
   return (
     <div className="col" style={{ gap: 6 }}>
       {/* Etiqueta nativa en vez de click() por código: más confiable en Android y navegadores dentro de apps. */}
       <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/*" className="sr-only" disabled={busy} onChange={async (e) => {
         const input = e.currentTarget;
+        try { sessionStorage.removeItem(pickKey(tournamentId)); } catch { /* nada */ }
         const f = input.files?.[0];
         if (!f) return;
+        // Rastro para diagnosticar: qué eligió y desde qué navegador.
+        void reportClientError("captura", `elegida · ${f.type || "sin tipo"} ${f.size}B · ${navigator.userAgent}`).catch(() => {});
         setBusy(true); setErr(null);
         try {
           const { blob, type } = await shrink(f);
@@ -82,7 +111,7 @@ export function CaptureUpload({ tournamentId, userId, onUploaded, label = "Subir
           input.value = "";
         }
       }} />
-      <label htmlFor={id} className="btn g" aria-disabled={busy || undefined} style={busy ? { pointerEvents: "none", opacity: 0.6 } : undefined}>
+      <label htmlFor={id} onClick={() => { try { sessionStorage.setItem(pickKey(tournamentId), String(Date.now())); } catch { /* nada */ } }} className="btn g" aria-disabled={busy || undefined} style={busy ? { pointerEvents: "none", opacity: 0.6 } : undefined}>
         <Icon name="img" size={20} />{busy ? "Subiendo…" : label}
       </label>
       {err && <span className="hint err" role="alert"><Icon name="warn" size={15} />{err}</span>}
