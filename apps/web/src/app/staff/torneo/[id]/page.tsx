@@ -40,7 +40,8 @@ export default async function Control({ params }: { params: Promise<{ id: string
           <span className="sm">{t.name} · {CATEGORY[t.category]?.label} · {formatLabel(t)} · {PACE_LABEL[t.pace.kind]} · código <span className="mono">{t.code}</span></span>
         </div>
         <div className="row wrap">
-          <Link href={`/torneo/${t.code}`} className="btn g sm"><Icon name="eye" size={18} />Vista pública</Link>
+          {!["draft", "pending_approval"].includes(t.status) && <Link href={`/torneo/${t.code}`} className="btn g sm"><Icon name="trophy" size={18} />Página del torneo</Link>}
+          {["draft", "pending_approval", "registration"].includes(t.status) && <Link href={`/staff/torneo/${t.id}/vista-previa`} className="btn g sm"><Icon name="eye" size={18} />Vista previa</Link>}
           {["draft", "pending_approval", "registration"].includes(t.status) && <Link href={`/staff/torneo/${t.id}/editar`} className="btn g sm"><Icon name="edit" size={18} />Editar</Link>}
         </div>
       </div>
@@ -48,8 +49,11 @@ export default async function Control({ params }: { params: Promise<{ id: string
       {t.status === "draft" && (
         <div className="box n6 col" style={{ gap: 10, maxWidth: 560 }}>
           <b className="t2">Borrador</b>
-          <span className="sm">Nadie lo ve todavía. Al publicarlo se abre la inscripción{["clasificatorio", "mayor"].includes(t.category) ? " (o se pide aprobación al superadmin)" : ""}.</span>
-          <ActionButton action={() => publishTournament(t.id)} ok="Publicado.">Publicar torneo</ActionButton>
+          <span className="sm">Nadie lo ve todavía. Revisa la vista previa antes de publicar. Al publicarlo se abre la inscripción{["clasificatorio", "mayor"].includes(t.category) ? " (o se pide aprobación al superadmin)" : ""}.</span>
+          <div className="row wrap" style={{ gap: 8 }}>
+            <Link href={`/staff/torneo/${t.id}/vista-previa`} className="btn s"><Icon name="eye" size={18} />Ver vista previa</Link>
+            <ActionButton action={() => publishTournament(t.id)} ok="Publicado.">Publicar torneo</ActionButton>
+          </div>
         </div>
       )}
       {t.status === "pending_approval" && <div className="banner warn n4"><Icon name="clock" size={18} />Esperando la aprobación del superadmin.</div>}

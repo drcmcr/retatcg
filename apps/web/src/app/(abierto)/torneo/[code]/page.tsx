@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
 
 const TABS = [["info", "Info"], ["jugadores", "Jugadores"], ["rondas", "Rondas"], ["tabla", "Tabla"]] as const;
 
-export default async function Torneo({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pestana?: string; ronda?: string }> }) {
+export default async function Torneo({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pestana?: string; ronda?: string; vista?: string }> }) {
   const { code } = await params;
   const sp = await searchParams;
   const t = await loadTournamentByCode(code);
@@ -30,9 +30,12 @@ export default async function Torneo({ params, searchParams }: { params: Promise
   const [regs, { rounds, matches }] = await Promise.all([loadRegs(t.id), loadRounds(t.id)]);
   const supabase = await supabaseServer();
   const isStaff = me ? ((await supabase.rpc("is_staff", { t: t.id, uid: me.id })).data as boolean) : false;
+  // Vista previa del staff: así lo ve un jugador que todavía no se inscribe.
+  const preview = isStaff && sp.vista === "jugador";
+  const q = preview ? "&vista=jugador" : "";
   const tab = TABS.some(([k]) => k === sp.pestana) ? sp.pestana! : t.status === "running" ? "rondas" : "info";
   const byId = new Map(regs.map((r) => [r.id, r]));
-  const mine = me ? regs.find((r) => r.user_id === me.id && r.status !== "removed") : undefined;
+  const mine = me && !preview ? regs.find((r) => r.user_id === me.id && r.status !== "removed") : undefined;
   const taken = regs.filter((r) => r.status === "registered" || r.status === "checked_in").length;
   const cat = CATEGORY[t.category]!;
   const rest = describeRestrictions(t.restrictions);
@@ -42,7 +45,12 @@ export default async function Torneo({ params, searchParams }: { params: Promise
   return (
     <main className="screen">
       <LiveRefresh channel={`torneo-${t.id}`} watch={[{ table: "tournaments", filter: `id=eq.${t.id}` }, { table: "matches", filter: `tournament_id=eq.${t.id}` }, { table: "registrations", filter: `tournament_id=eq.${t.id}` }]} />
-      <TopBar title="" back="/torneos" right={isStaff ? <Link href={`/staff/torneo/${t.id}`} className="btn g sm"><Icon name="gear" size={18} />Panel</Link> : undefined} />
+      {preview && (
+        <div className="banner warn" role="status">
+          <Icon name="eye" size={18} /><span className="grow">Vista previa: así lo ve un jugador antes de inscribirse.</span>
+        </div>
+      )}
+      <TopBar title="" back={preview ? `/staff/torneo/${t.id}/vista-previa` : "/torneos"} right={isStaff && !preview ? <Link href={`/staff/torneo/${t.id}`} className="btn g sm"><Icon name="gear" size={18} />Panel</Link> : undefined} />
       <div className="row wrap" style={{ gap: 6 }}>
         <span className={`pill ${cat.pill}`}>{cat.label}</span>
         <span className="pill o">{cat.pr}</span>
@@ -56,7 +64,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
       <span className="sm">{t.club ? `${t.club} · ` : ""}{fmtDateTime(t.starts_at)} · <span className="mono">{t.code}</span></span>
 
       <nav className="seg" aria-label="Secciones del torneo">
-        {TABS.map(([k, l]) => <Link key={k} href={`/torneo/${t.code}?pestana=${k}`} aria-current={tab === k ? "page" : undefined}>{l}</Link>)}
+        {TABS.map(([k, l]) => <Link key={k} href={`/torneo/${t.code}?pestana=${k}${q}`} aria-current={tab === k ? "page" : undefined}>{l}</Link>)}
       </nav>
 
       {t.announcement && (
@@ -114,7 +122,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
           <>
             <div className="chips">
               {rounds.map((r) => (
-                <Link key={r.id} href={`/torneo/${t.code}?pestana=rondas&ronda=${r.number}`} className="chip o" aria-current={r.id === selected.id ? "page" : undefined}>
+                <Link key={r.id} href={`/torneo/${t.code}?pestana=rondas&ronda=${r.number}${q}`} className="chip o" aria-current={r.id === selected.id ? "page" : undefined}>
                   {r.stage === "top" ? `Top R${r.number}` : `R${r.number}`}
                 </Link>
               ))}
@@ -125,7 +133,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
                 const mineRow = mine && (m.a === mine.id || m.b === mine.id);
                 const res = m.status === "confirmed" ? (m.b === null ? "Bye" : m.double_loss ? "Derrota doble" : `${m.games_a}-${m.games_b}`) : null;
                 return (
-                  <Link key={m.id} href={mineRow || isStaff ? `/mesa/${m.id}` : "#"} className="li n4" style={mineRow ? { boxShadow: "inset 0 0 0 2px var(--lime)" } : undefined}>
+                  <Link key={m.id} href={mineRow || (isStaff && !preview) ? `/mesa/${m.id}` : "#"} className="li n4" style={mineRow ? { boxShadow: "inset 0 0 0 2px var(--lime)" } : undefined}>
                     <span className="px20" style={{ width: 28, fontSize: 22 }}>{m.table_no}</span>
                     <span className="grow">
                       <span className="ttl">{regName(byId.get(m.a))}</span>
@@ -169,12 +177,17 @@ export default async function Torneo({ params, searchParams }: { params: Promise
       </p>
 
       <div className="stick-bottom col" style={{ gap: 10, marginTop: "auto" }}>
-        <EnrollActions
+        {preview ? (
+          <>
+            <button className="btn p" disabled>Inscribirme</button>
+            <span className="xs" style={{ textAlign: "center" }}>Botón de muestra. Los jugadores lo usan para inscribirse{t.status === "draft" ? " cuando publiques el torneo" : ""}.</span>
+          </>
+        ) : <EnrollActions
           t={{ id: t.id, code: t.code, name: t.name, status: t.status, starts_at: t.starts_at, checkin_minutes: t.checkin_minutes, pace: t.pace.kind, policy: effPolicy, rules: rest, format: formatLabel(t), category: cat.pr }}
           me={me ? { id: me.id } : null}
           reg={mine ? { status: mine.status, checked_in_at: mine.checked_in_at } : null}
           matchId={myMatch?.id}
-        />
+        />}
       </div>
     </main>
   );

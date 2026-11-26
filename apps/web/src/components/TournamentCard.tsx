@@ -11,11 +11,11 @@ export type TCard = {
 
 const STATUS: Record<string, string> = { registration: "Inscripción abierta", running: "En curso", finished: "Terminado", cancelled: "Cancelado", pending_approval: "Esperando aprobación", draft: "Borrador" };
 
-export function TournamentCard({ t, locked }: { t: TCard; locked?: string }) {
+export function TournamentCard({ t, locked, href }: { t: TCard; locked?: string; href?: string }) {
   const cat = CATEGORY[t.category]!;
   const pct = Math.min(100, Math.round((t.taken / t.capacity) * 100));
   return (
-    <Link href={`/torneo/${t.code}`} className="box n4 col" style={{ gap: 8, color: "inherit", textDecoration: "none", opacity: locked ? 0.62 : 1 }}>
+    <Link href={href ?? `/torneo/${t.code}`} className="box n4 col" style={{ gap: 8, color: "inherit", textDecoration: "none", opacity: locked ? 0.62 : 1 }}>
       <div className="row between">
         <span className="row" style={{ gap: 6 }}>
           <span className={`pill ${cat.pill}`}>{cat.label}</span>
