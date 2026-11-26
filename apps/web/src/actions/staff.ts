@@ -50,3 +50,6 @@ export async function removeBlockedTerm(id: number) { return callRpc("admin_remo
 export async function testText(text: string, field: string) { return callRpc<string | null>("admin_test_text", { p_text: text, p_field: field }); }
 export async function adminRenameTournament(code: string, name: string) { return callRpc("admin_rename_tournament", { p_code: code, p_name: name }); }
 export async function adminRenameClub(oldName: string, newName: string) { return callRpc<number>("admin_rename_club", { p_old: oldName, p_new: newName }); }
+export async function createInvites(tournamentId: string, labels: string[]) { return callRpc<number>("create_invites", { p_tournament: tournamentId, p_labels: labels }); }
+export async function cancelInvite(id: string) { return callRpc("cancel_invite", { p_invite: id }); }
+export async function staffMove(registrationId: string, to: "waitlist" | "registered") { return callRpc("staff_move", { p_registration: registrationId, p_to: to }); }

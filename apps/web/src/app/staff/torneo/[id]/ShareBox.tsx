@@ -4,7 +4,7 @@ import { CopyButton, useToast } from "@/components/client";
 import { Icon } from "@/components/Icon";
 
 /** Compartir un torneo: enlace, mensaje listo para pegar, QR descargable y QR para proyectar. */
-export function ShareBox({ id, url, code, svg, png, message }: { id: string; url: string; code: string; svg: string; png: string; message: string }) {
+export function ShareBox({ id, url, code, svg, png, message, inviteOnly }: { id: string; url: string; code: string; svg: string; png: string; message: string; inviteOnly?: boolean }) {
   const toast = useToast();
   async function share() {
     try {
@@ -18,7 +18,7 @@ export function ShareBox({ id, url, code, svg, png, message }: { id: string; url
   }
   return (
     <div className="box n4 col" style={{ gap: 12 }}>
-      <b className="t2">Compartir</b>
+      <b className="t2">{inviteOnly ? "Enlace general (lista de espera)" : "Compartir"}</b>
       <div className="share">
         <div className="qrbox" role="img" aria-label={`Código QR del torneo ${code}`} dangerouslySetInnerHTML={{ __html: svg }} />
         <div className="col" style={{ gap: 8, minWidth: 0 }}>
@@ -35,7 +35,9 @@ export function ShareBox({ id, url, code, svg, png, message }: { id: string; url
         <a className="btn s sm" href={png} download={`reta-${code}.png`}><Icon name="dl" size={18} />Descargar QR</a>
         <Link className="btn g sm" href={`/proyectar/${id}`}><Icon name="qr" size={18} />Proyectar QR</Link>
       </div>
-      <span className="xs">Quien abre el enlace o escanea el QR llega directo al torneo. Si no tiene cuenta, la crea y regresa aquí para inscribirse. También pueden escribir el código en Torneos → ícono de QR.</span>
+      <span className="xs">{inviteOnly
+        ? "Como el torneo es con invitación, este enlace, el QR y el código solo dan lugar en la lista de espera. Para apartar lugares usa las invitaciones personales."
+        : "Quien abre el enlace o escanea el QR llega directo al torneo. Si no tiene cuenta, la crea y regresa aquí para inscribirse. También pueden escribir el código en Torneos → ícono de QR."}</span>
     </div>
   );
 }

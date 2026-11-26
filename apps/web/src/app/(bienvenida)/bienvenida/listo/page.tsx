@@ -17,9 +17,9 @@ export default async function Listo({ searchParams }: { searchParams: Promise<{ 
           <div style={{ textAlign: "left" }}>
             <HunterCard d={{ userId: me.id, username: me.username, pr: me.pr, medals: me.medals, titleMedal: null, titleForm: null, season: me.season?.id }} />
           </div>
-          {next?.startsWith("/torneo/") ? (
+          {next?.startsWith("/torneo/") || next?.startsWith("/i/") ? (
             <>
-              <Link href={next} className="btn p">Volver al torneo para inscribirme</Link>
+              <Link href={next} className="btn p">{next.startsWith("/i/") ? "Volver a mi invitación" : "Volver al torneo para inscribirme"}</Link>
               <Link href="/instalar" className="btn s">Activar avisos (te recuerdan el check-in)</Link>
             </>
           ) : <Link href="/instalar" className="btn p">Siguiente: avisos</Link>}

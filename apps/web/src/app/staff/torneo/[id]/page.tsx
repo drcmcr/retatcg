@@ -9,6 +9,8 @@ import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, loadRounds, regName } from "@/lib/tournament";
 import { Announcement } from "./Announcement";
 import { ShareBox } from "./ShareBox";
+import { Invites, type Invite } from "./Invites";
+import { supabaseServer } from "@/lib/supabase/server";
 import { qrPng, qrSvg, siteOrigin } from "@/lib/share";
 import { now } from "@/lib/time";
 
@@ -35,7 +37,23 @@ export default async function Control({ params }: { params: Promise<{ id: string
   const shareUrl = `${await siteOrigin()}/torneo/${t.code}`;
   const canShare = ["registration", "running"].includes(t.status);
   const [svg, png] = canShare ? await Promise.all([qrSvg(shareUrl), qrPng(shareUrl)]) : ["", ""];
-  const message = `Te invito a ${t.name}${t.club ? ` (${t.club})` : ""}, torneo en Reta. ${fmtDateTime(t.starts_at)}. Inscríbete aquí: ${shareUrl} · código ${t.code}`;
+  const message = t.invite_only
+    ? `${t.name}${t.club ? ` (${t.club})` : ""}, torneo con invitación en Reta. ${fmtDateTime(t.starts_at)}. Entra a la lista de espera aquí: ${shareUrl} · código ${t.code}`
+    : `Te invito a ${t.name}${t.club ? ` (${t.club})` : ""}, torneo en Reta. ${fmtDateTime(t.starts_at)}. Inscríbete aquí: ${shareUrl} · código ${t.code}`;
+  // Invitaciones personales (torneos con invitación): se preparan desde el borrador.
+  const showInvites = t.invite_only && ["draft", "pending_approval", "registration"].includes(t.status);
+  const invitesLocked = t.status !== "draft" && t.status !== "pending_approval" && now() >= new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
+  let invites: Invite[] = [];
+  if (showInvites) {
+    const supabase = await supabaseServer();
+    const { data } = await supabase.from("tournament_invites").select("id,token,label,status,used:profiles!tournament_invites_used_by_fkey(username)")
+      .eq("tournament_id", t.id).order("created_at");
+    invites = ((data ?? []) as unknown as { id: string; token: string; label: string; status: string; used: { username: string } | null }[])
+      .map((i) => ({ id: i.id, token: i.token, label: i.label, status: i.status, used_by_name: i.used?.username ?? null }));
+  }
+  const invitesBox = showInvites
+    ? <Invites tournamentId={t.id} origin={shareUrl.replace(/\/torneo\/.*$/, "")} name={t.name} when={fmtDateTime(t.starts_at)} capacity={t.capacity} seated={registered} invites={invites} locked={invitesLocked} />
+    : null;
 
   return (
     <>
@@ -63,6 +81,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
         </div>
       )}
       {t.status === "pending_approval" && <div className="banner warn n4"><Icon name="clock" size={18} />Esperando la aprobación del superadmin.</div>}
+      {t.status !== "registration" && invitesBox && <div style={{ maxWidth: 560 }}>{invitesBox}</div>}
 
       {t.status === "registration" && (
         <div className="grid2">
@@ -84,7 +103,8 @@ export default async function Control({ params }: { params: Promise<{ id: string
             <Link href={`/staff/torneo/${t.id}/inscritos`} className="btn g">Ver inscritos, invitados y jueces</Link>
           </div>
           <div className="col" style={{ gap: 12 }}>
-            <ShareBox id={t.id} url={shareUrl} code={t.code} svg={svg} png={png} message={message} />
+            {invitesBox}
+            <ShareBox id={t.id} url={shareUrl} code={t.code} svg={svg} png={png} message={message} inviteOnly={t.invite_only} />
             <Announcement id={t.id} current={t.announcement} />
             <ActionButton className="btn d" action={cancelTournament} args={[t.id]} confirm="¿Cancelar el torneo? Se avisa a todos los inscritos." ok="Torneo cancelado.">Cancelar torneo</ActionButton>
           </div>

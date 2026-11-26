@@ -367,3 +367,66 @@ describe("nombres y textos", () => {
     expect((await as(admin, (tx) => tx`select public.admin_test_text('Copa Tlaloc', 'torneo') as r`))[0]!.r).toBeNull();
   });
 });
+
+describe("invitaciones personales", () => {
+  it("el enlace personal da lugar, el general solo espera y el staff reacomoda", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const ps: string[] = [];
+    for (let i = 0; i < 5; i++) ps.push(await newUser(`inv${i}`));
+    const id = (await as(org, (tx) => tx`select public.create_tournament(${sql.json({
+      name: "Copa Invitados", category: "casual", format: "swiss", swiss_rounds: 1, capacity: 3, invite_only: true,
+      starts_at: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+    })}) as id`))[0]!.id as string;
+    // Se pueden preparar en borrador, pero no más que el cupo.
+    await expect(as(org, (tx) => tx`select public.create_invites(${id}, ${["A", "B", "C", "D"]})`)).rejects.toThrow(/Solo quedan 3/);
+    await as(org, (tx) => tx`select public.create_invites(${id}, ${["Dave", "Ana"]})`);
+    const inv = async () => await sql`select id, token, label, status, used_by from public.tournament_invites where tournament_id = ${id} order by label`;
+    const [ana, dave] = await inv();
+    await expect(as(ps[0]!, (tx) => tx`select public.claim_invite(${dave!.token})`)).rejects.toThrow(/todavía no se publica/);
+    await as(org, (tx) => tx`select public.publish_tournament(${id})`);
+    const st = async () => Object.fromEntries((await sql`select user_id, status from public.registrations where tournament_id = ${id}`).map((r) => [r.user_id, r.status]));
+
+    // Enlace general: lista de espera aunque haya lugar.
+    expect((await as(ps[4]!, (tx) => tx`select public.register(${id}) as s`))[0]!.s).toBe("waitlist");
+    // Enlace personal: lugar seguro, una sola vez; la misma persona puede abrirlo de nuevo.
+    expect((await as(ps[0]!, (tx) => tx`select public.claim_invite(${dave!.token}) as c`))[0]!.c).toBeTruthy();
+    expect((await as(ps[0]!, (tx) => tx`select public.claim_invite(${dave!.token}) as c`))[0]!.c).toBeTruthy();
+    await expect(as(ps[1]!, (tx) => tx`select public.claim_invite(${dave!.token})`)).rejects.toThrow(/otra persona/);
+    expect((await as(ps[1]!, (tx) => tx`select public.invite_info(${dave!.token}) as i`))[0]!.i.state).toBe("used");
+    expect((await sql`select public.invite_info(${ana!.token}) as i`)[0]!.i).toMatchObject({ state: "open", label: "Ana" });
+    // Quien ya está en espera puede usar una invitación y sube.
+    await as(ps[4]!, (tx) => tx`select public.claim_invite(${ana!.token})`);
+    expect((await st())[ps[4]!]).toBe("registered");
+    // Al organizador le llega quién usó cada invitación.
+    expect((await sql`select count(*)::int n from public.notifications where user_id = ${org} and title = 'Invitación usada'`)[0]!.n).toBe(2);
+
+    // Lugares: 2 usados + 1 libre. Dar lugar a alguien de la espera llena el cupo.
+    await as(ps[2]!, (tx) => tx`select public.register(${id})`);
+    await as(ps[3]!, (tx) => tx`select public.register(${id})`);
+    const reg = async (u: string) => (await sql`select id from public.registrations where tournament_id = ${id} and user_id = ${u}`)[0]!.id;
+    await as(org, async (tx) => tx`select public.staff_move(${await reg(ps[2]!)}, 'registered')`);
+    await expect(as(org, async (tx) => tx`select public.staff_move(${await reg(ps[3]!)}, 'registered')`)).rejects.toThrow(/No hay lugar libre/);
+    await expect(as(ps[2]!, async (tx) => tx`select public.staff_move(${await reg(ps[3]!)}, 'registered')`)).rejects.toThrow(/staff/);
+    // Cancelar una invitación usada manda a esa persona a espera; luego ya hay lugar.
+    await as(org, (tx) => tx`select public.cancel_invite(${dave!.id})`);
+    expect((await st())[ps[0]!]).toBe("waitlist");
+    await as(org, async (tx) => tx`select public.staff_move(${await reg(ps[3]!)}, 'registered')`);
+    // Si alguien con lugar se va, en torneos con invitación el lugar no se llena solo.
+    await as(ps[3]!, (tx) => tx`select public.unregister(${id})`);
+    expect((await st())[ps[0]!]).toBe("waitlist");
+    await as(org, (tx) => tx`select public.create_invites(${id}, ${["Luis"]})`);
+
+    // Abre el check-in: ya no se mueve nada y la invitación sin usar vence.
+    await sql`update public.tournaments set starts_at = now() + interval '10 minutes' where id = ${id}`;
+    const luis = (await inv()).find((i) => i.label === "Luis")!;
+    await expect(as(ps[1]!, (tx) => tx`select public.claim_invite(${luis.token})`)).rejects.toThrow(/venció/);
+    await expect(as(org, async (tx) => tx`select public.staff_move(${await reg(ps[2]!)}, 'waitlist')`)).rejects.toThrow(/check-in ya abrió/);
+    await expect(as(org, (tx) => tx`select public.create_invites(${id}, ${["Otro"]})`)).rejects.toThrow(/check-in ya abrió/);
+    // Los de espera que hacen check-in toman los lugares libres al empezar.
+    for (const u of [ps[2]!, ps[4]!, ps[0]!]) await as(u, (tx) => tx`select public.checkin(${id})`);
+    await startTournament(sql, id, org);
+    const s = await st();
+    expect([s[ps[0]!], s[ps[2]!], s[ps[4]!]]).toEqual(["checked_in", "checked_in", "checked_in"]);
+    expect((await inv()).find((i) => i.label === "Luis")!.status).toBe("expired");
+  });
+});

@@ -26,3 +26,7 @@ export async function findByCode(raw: string): Promise<ActionResult> {
   if (!data) return { ok: false, error: "No encontramos un torneo con ese código." };
   redirect(`/torneo/${data.code}`);
 }
+export async function claimInvite(token: string) {
+  if (!/^[0-9a-f]{32}$/.test(token)) return { ok: false, error: "Esta invitación no existe. Revisa el enlace." } as ActionResult<string>;
+  return callRpc<string>("claim_invite", { p_token: token });
+}

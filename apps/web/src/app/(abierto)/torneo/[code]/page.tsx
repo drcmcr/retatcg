@@ -183,7 +183,7 @@ export default async function Torneo({ params, searchParams }: { params: Promise
             <span className="xs" style={{ textAlign: "center" }}>Botón de muestra. Los jugadores lo usan para inscribirse{t.status === "draft" ? " cuando publiques el torneo" : ""}.</span>
           </>
         ) : <EnrollActions
-          t={{ id: t.id, code: t.code, name: t.name, status: t.status, starts_at: t.starts_at, checkin_minutes: t.checkin_minutes, pace: t.pace.kind, policy: effPolicy, rules: rest, format: formatLabel(t), category: cat.pr }}
+          t={{ id: t.id, code: t.code, name: t.name, status: t.status, starts_at: t.starts_at, checkin_minutes: t.checkin_minutes, pace: t.pace.kind, policy: effPolicy, rules: rest, format: formatLabel(t), category: cat.pr, inviteOnly: t.invite_only }}
           me={me ? { id: me.id } : null}
           reg={mine ? { status: mine.status, checked_in_at: mine.checked_in_at } : null}
           matchId={myMatch?.id}

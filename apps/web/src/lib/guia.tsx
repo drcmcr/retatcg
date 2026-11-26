@@ -242,7 +242,8 @@ export const CHAPTERS: Chapter[] = [
           <li><b>Staff, Crear torneo.</b> Nombre, fecha, cupo y categoría. Los Clasificatorios y Mayores esperan la aprobación del superadmin.</li>
           <li><b>Formato y ritmo:</b> suizo, suizo con top cut o eliminación; Bo1 o Bo3; en vivo, por jornadas o por ventana. Abajo ves cuánto duraría en el peor caso.</li>
           <li><b>Mazos:</b> libre, por ronda o fijo, y restricciones si las quieres.</li>
-          <li><b>Premios (opcional):</b> uno por lugar, con tipo y descripción, y cómo se entregan. Si lo marcas como <b>Solo con invitación</b>, el torneo no aparece en la lista y solo entra quien tenga el código o el QR.</li>
+          <li><b>Premios (opcional):</b> uno por lugar, con tipo y descripción, y cómo se entregan. </li>
+          <li><b>Solo con invitación:</b> el torneo no aparece en la lista. Desde el panel creas <b>invitaciones personales</b>: un enlace por invitado que le aparta un lugar seguro y sirve una sola vez. El enlace general, el QR y el código solo dan lugar en la <b>lista de espera</b>. Las invitaciones sin usar vencen al abrir el check-in y sus lugares pasan a quienes esperan y sí hicieron check-in. Hasta que abre el check-in puedes <b>Pasar a espera</b> o <b>Dar lugar</b> desde Inscritos.</li>
           <li><b>Crear y abrir inscripción</b>, o guárdalo como borrador.</li>
         </ol>
         <h2>Durante el torneo</h2>

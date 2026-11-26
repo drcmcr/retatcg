@@ -9,7 +9,7 @@ import { fmtDateTime } from "@/lib/format";
 import { now } from "@/lib/time";
 
 type Props = {
-  t: { id: string; code: string; name: string; status: string; starts_at: string; checkin_minutes: number; pace: string; policy: string; rules: string[]; format: string; category: string };
+  t: { id: string; code: string; name: string; status: string; starts_at: string; checkin_minutes: number; pace: string; policy: string; rules: string[]; format: string; category: string; inviteOnly?: boolean };
   me: { id: string } | null;
   reg: { status: string; checked_in_at?: string | null } | null;
   matchId?: string;
@@ -73,12 +73,13 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
 
   return (
     <>
-      <button className="btn p" onClick={() => setSheet(true)}>Inscribirme</button>
+      {t.inviteOnly && <span className="xs" style={{ textAlign: "center" }}>Torneo con invitación. Si te invitaron, abre el enlace personal que te mandaron. Sin enlace entras a la lista de espera: si sobran lugares al cerrar el check-in, juegas.</span>}
+      <button className={t.inviteOnly ? "btn s" : "btn p"} onClick={() => setSheet(true)}>{t.inviteOnly ? "Entrar a la lista de espera" : "Inscribirme"}</button>
       {sheet && (
         <div className="sheet-back" onClick={(e) => { if (e.target === e.currentTarget) setSheet(false); }}>
           <div className="sheet fade-in" role="dialog" aria-modal="true" aria-labelledby="ins-title">
             <div className="grab" />
-            <b id="ins-title" className="t2">Confirma tu inscripción</b>
+            <b id="ins-title" className="t2">{t.inviteOnly ? "Lista de espera" : "Confirma tu inscripción"}</b>
             <div className="col" style={{ gap: 4 }}>
               {[["Torneo", t.name], ["Fecha", fmtDateTime(t.starts_at)], ["Formato", t.format], ["Da PR", t.category]].map(([k, v]) => (
                 <div key={k} className="row between sm"><span>{k}</span><b style={{ color: "var(--ink)", textAlign: "right" }}>{v}</b></div>
@@ -98,8 +99,8 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
             </label>
             <button className="btn p" disabled={!accept || pending} onClick={() => run(() => register(t.id), {
               then: (st) => { setSheet(false); if (t.policy === "fijo") window.location.assign(`/torneo/${t.code}/mazo`); void st; },
-              ok: "¡Listo! Estás inscrito.",
-            })}>{pending ? "Inscribiendo…" : "Confirmar inscripción"}</button>
+              ok: t.inviteOnly ? "Estás en la lista de espera." : "¡Listo! Estás inscrito.",
+            })}>{pending ? "Guardando…" : t.inviteOnly ? "Entrar a la lista de espera" : "Confirmar inscripción"}</button>
             <button className="btn s" onClick={() => setSheet(false)}>Ahora no</button>
           </div>
         </div>

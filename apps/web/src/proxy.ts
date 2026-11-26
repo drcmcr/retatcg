@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Rutas que se ven sin cuenta.
-const PUBLIC = [/^\/$/, /^\/entrar/, /^\/auth\//, /^\/t\//, /^\/torneos$/, /^\/torneo\/[^/]+$/, /^\/jugador\//, /^\/beta-18/, /^\/guia/, /^\/legal/, /^\/api\/og/, /^\/manifest/, /^\/sw\.js/, /^\/offline/];
+const PUBLIC = [/^\/$/, /^\/entrar/, /^\/auth\//, /^\/t\//, /^\/torneos$/, /^\/torneo\/[^/]+$/, /^\/i\//, /^\/jugador\//, /^\/beta-18/, /^\/guia/, /^\/legal/, /^\/api\/og/, /^\/manifest/, /^\/sw\.js/, /^\/offline/];
 
 /** Refresca la sesión en cada petición y manda a /entrar a quien no tiene sesión en una ruta privada. */
 export async function proxy(request: NextRequest) {

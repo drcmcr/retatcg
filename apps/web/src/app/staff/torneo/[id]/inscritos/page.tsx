@@ -1,6 +1,7 @@
 import { ActionButton, LiveRefresh } from "@/components/client";
 import { Identicon } from "@/components/Identicon";
-import { removeStaff, staffRegistration } from "@/actions/staff";
+import { removeStaff, staffMove, staffRegistration } from "@/actions/staff";
+import { now } from "@/lib/time";
 import { RANK_NAMES } from "@/lib/ranks";
 import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, regName } from "@/lib/tournament";
@@ -22,6 +23,10 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
   const pr = new Map((prs ?? []).map((p) => [p.user_id, p.pr]));
   const { data: att } = await supabase.rpc("tournament_attendance", { p_tournament: t.id });
   const attendance = new Map(((att ?? []) as { user_id: string; played: number; no_shows: number }[]).map((a) => [a.user_id, a]));
+  const { data: inv } = t.invite_only ? await supabase.from("tournament_invites").select("label,registration_id").eq("tournament_id", t.id).eq("status", "used") : { data: [] };
+  const invitedAs = new Map((inv ?? []).map((i) => [i.registration_id as string, i.label as string]));
+  // Reacomodar lugares solo antes de que abra el check-in.
+  const canMove = t.status === "registration" && now() < new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
   const attLabel = (uid: string | null) => {
     const a = uid ? attendance.get(uid) : undefined;
     if (!a || a.played + a.no_shows === 0) return "Nuevo";
@@ -37,12 +42,14 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
           <tbody>
             {regs.map((r) => (
               <tr key={r.id}>
-                <td className="lead"><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}</span></td>
+                <td className="lead"><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}{invitedAs.has(r.id) && <span className="xs cyan">invitación: {invitedAs.get(r.id)}</span>}</span></td>
                 <td data-label="Rango">{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</td>
                 <td data-label="Asistencia" className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</td>
                 <td data-label="Estado">{ST[r.status]}</td>
                 <td className="r nw act">
                   {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
+                  {canMove && r.status === "registered" && <ActionButton className="link" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera.">Pasar a espera</ActionButton>}{" "}
+                  {canMove && r.status === "waitlist" && <ActionButton className="link" action={staffMove} args={[r.id, "registered"]} ok="Ya tiene lugar.">Dar lugar</ActionButton>}{" "}
                   {!["dropped", "no_show"].includes(r.status) && <ActionButton className="link" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
                 </td>
               </tr>
