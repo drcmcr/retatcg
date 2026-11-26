@@ -30,3 +30,10 @@ export async function claimInvite(token: string) {
   if (!/^[0-9a-f]{32}$/.test(token)) return { ok: false, error: "Esta invitación no existe. Revisa el enlace." } as ActionResult<string>;
   return callRpc<string>("claim_invite", { p_token: token });
 }
+
+/** Errores del navegador que no llegan al servidor (p. ej. la captura no se pudo leer): quedan en los logs de Vercel. */
+export async function reportClientError(where: string, detail: string) {
+  const supabase = await supabaseServer();
+  const { data } = await supabase.auth.getUser();
+  console.error(`[cliente:${where.slice(0, 20)}] usuario=${data.user?.id ?? "anónimo"} ${detail.slice(0, 500)}`);
+}
