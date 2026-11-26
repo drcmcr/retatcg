@@ -1,8 +1,11 @@
 import { ActionButton, LiveRefresh } from "@/components/client";
 import { Identicon } from "@/components/Identicon";
+import { Status } from "@/components/ui";
+import type { IconName } from "@/components/Icon";
 import { removeStaff, staffMove, staffRegistration } from "@/actions/staff";
 import { now } from "@/lib/time";
 import { RANK_NAMES } from "@/lib/ranks";
+import { describeRestrictions } from "@/lib/restrictions";
 import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, regName } from "@/lib/tournament";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -10,7 +13,26 @@ import { AddGuest, AddJudge } from "./Forms";
 
 export const metadata = { title: "Inscritos y staff" };
 
-const ST: Record<string, string> = { registered: "Inscrito", checked_in: "Check-in listo", waitlist: "En espera", dropped: "Retirado", removed: "Fuera", no_show: "No se presentó" };
+type Tone = Parameters<typeof Status>[0]["tone"];
+type Look = { tone: Tone; icon: IconName; label: string };
+
+// Estado de la inscripción: siempre color + ícono + texto.
+const ST: Record<string, Look> = {
+  registered: { tone: "cyan", icon: "ticket", label: "Inscrito" },
+  checked_in: { tone: "ok", icon: "check", label: "Check-in listo" },
+  waitlist: { tone: "warn", icon: "clock", label: "En espera" },
+  dropped: { tone: "muted", icon: "out", label: "Retirado" },
+  removed: { tone: "muted", icon: "x", label: "Fuera" },
+  no_show: { tone: "err", icon: "ban", label: "No se presentó" },
+};
+
+// Estado del mazo declarado para la ronda que toca (o el mazo fijo).
+const DECK: Record<string, Look> = {
+  none: { tone: "warn", icon: "warn", label: "Sin declarar" },
+  unreviewed: { tone: "cyan", icon: "clock", label: "Por revisar" },
+  approved: { tone: "ok", icon: "check", label: "Aprobado" },
+  infraction: { tone: "err", icon: "ban", label: "Infracción" },
+};
 
 export default async function Inscritos({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +47,22 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
   const attendance = new Map(((att ?? []) as { user_id: string; played: number; no_shows: number }[]).map((a) => [a.user_id, a]));
   const { data: inv } = t.invite_only ? await supabase.from("tournament_invites").select("label,registration_id").eq("tournament_id", t.id).eq("status", "used") : { data: [] };
   const invitedAs = new Map((inv ?? []).map((i) => [i.registration_id as string, i.label as string]));
+  // Misma regla que ve el jugador en /torneo/[code]/mazo: "libre" con restricciones se vuelve "por ronda".
+  const deckPolicy = t.deck_policy === "libre" && describeRestrictions(t.restrictions).length ? "por_ronda" : t.deck_policy;
+  const deckRound = deckPolicy === "fijo" ? 0 : t.status === "running" ? t.current_round + 1 : 1;
+  const showDeck = deckPolicy !== "libre" && ["registration", "running"].includes(t.status);
+  const { data: decks } = showDeck
+    ? await supabase.from("deck_declarations").select("registration_id,status").eq("tournament_id", t.id).eq("round", deckRound)
+    : { data: [] };
+  const deckOf = new Map((decks ?? []).map((d) => [d.registration_id as string, d.status as string]));
+  const deckCell = (r: (typeof regs)[number]) => {
+    // Los invitados sin cuenta no declaran mazo; tampoco quien ya salió del torneo.
+    if (!r.user_id || ["dropped", "no_show", "removed"].includes(r.status)) return "—";
+    const d = DECK[deckOf.get(r.id) ?? "none"];
+    const label = deckPolicy === "por_ronda" ? `R${deckRound} · ${d.label}` : d.label;
+    const st = <Status tone={d.tone} icon={d.icon}>{label}</Status>;
+    return deckOf.has(r.id) && d !== DECK.approved ? <a href={`/staff/torneo/${t.id}/mazos?estado=${deckOf.get(r.id)}`} style={{ textDecoration: "none" }}>{st}</a> : st;
+  };
   // Reacomodar lugares solo antes de que abra el check-in.
   const canMove = t.status === "registration" && now() < new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
   const attLabel = (uid: string | null) => {
@@ -38,14 +76,15 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
       <h1 className="t1">Inscritos</h1>
       <div className="grid2">
         <table className="tbl stack" style={{ fontSize: 15 }}>
-          <thead><tr><th>Jugador</th><th>Rango</th><th>Asistencia</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Jugador</th><th>Rango</th><th>Asistencia</th><th>Estado</th>{showDeck && <th>Mazo</th>}<th></th></tr></thead>
           <tbody>
             {regs.map((r) => (
               <tr key={r.id}>
                 <td className="lead"><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}{invitedAs.has(r.id) && <span className="xs cyan">invitación: {invitedAs.get(r.id)}</span>}</span></td>
                 <td data-label="Rango">{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</td>
                 <td data-label="Asistencia" className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</td>
-                <td data-label="Estado">{ST[r.status]}</td>
+                <td data-label="Estado">{ST[r.status] ? <Status tone={ST[r.status].tone} icon={ST[r.status].icon}>{ST[r.status].label}</Status> : r.status}</td>
+                {showDeck && <td data-label="Mazo">{deckCell(r)}</td>}
                 <td className="r nw act">
                   {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
                   {canMove && r.status === "registered" && <ActionButton className="link" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera.">Pasar a espera</ActionButton>}{" "}
@@ -54,7 +93,7 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
                 </td>
               </tr>
             ))}
-            {!regs.length && <tr><td colSpan={4} className="sm">Aún no hay inscritos.</td></tr>}
+            {!regs.length && <tr><td colSpan={showDeck ? 6 : 5} className="sm">Aún no hay inscritos.</td></tr>}
           </tbody>
         </table>
         <div className="col" style={{ gap: 12 }}>
