@@ -16,7 +16,7 @@ function ageOn(y: number, m: number, d: number): number {
   return a;
 }
 
-export function Onboarding({ seed }: { seed: string }) {
+export function Onboarding({ seed, next }: { seed: string; next?: string }) {
   const [step, setStep] = useState(1);
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
@@ -60,7 +60,7 @@ export function Onboarding({ seed }: { seed: string }) {
         if (/usuario/i.test(r.error)) setStep(2);
         return;
       }
-      router.replace("/bienvenida/listo");
+      router.replace(next ? `/bienvenida/listo?siguiente=${encodeURIComponent(next)}` : "/bienvenida/listo");
       router.refresh();
     });
   }

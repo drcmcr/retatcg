@@ -8,6 +8,8 @@ import { fmtDateTime } from "@/lib/format";
 import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, loadRounds, regName } from "@/lib/tournament";
 import { Announcement } from "./Announcement";
+import { ShareBox } from "./ShareBox";
+import { qrPng, qrSvg, siteOrigin } from "@/lib/share";
 import { now } from "@/lib/time";
 
 export const metadata = { title: "Control del torneo" };
@@ -30,6 +32,10 @@ export default async function Control({ params }: { params: Promise<{ id: string
   const late = round?.ends_at && new Date(round.ends_at).getTime() < now();
   const order = (s: string) => ["disputed", "reported", "pending", "scheduled", "playing", "confirmed"].indexOf(s);
   const sorted = [...current].sort((a, b) => order(a.status) - order(b.status) || a.table_no - b.table_no);
+  const shareUrl = `${await siteOrigin()}/torneo/${t.code}`;
+  const canShare = ["registration", "running"].includes(t.status);
+  const [svg, png] = canShare ? await Promise.all([qrSvg(shareUrl), qrPng(shareUrl)]) : ["", ""];
+  const message = `Te invito a ${t.name}${t.club ? ` (${t.club})` : ""}, torneo en Reta. ${fmtDateTime(t.starts_at)}. Inscríbete aquí: ${shareUrl} · código ${t.code}`;
 
   return (
     <>
@@ -78,6 +84,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
             <Link href={`/staff/torneo/${t.id}/inscritos`} className="btn g">Ver inscritos, invitados y jueces</Link>
           </div>
           <div className="col" style={{ gap: 12 }}>
+            <ShareBox id={t.id} url={shareUrl} code={t.code} svg={svg} png={png} message={message} />
             <Announcement id={t.id} current={t.announcement} />
             <ActionButton className="btn d" action={cancelTournament} args={[t.id]} confirm="¿Cancelar el torneo? Se avisa a todos los inscritos." ok="Torneo cancelado.">Cancelar torneo</ActionButton>
           </div>

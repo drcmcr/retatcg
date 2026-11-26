@@ -32,7 +32,9 @@ export function CodeForm({ email, next }: { email: string; next?: string }) {
         refs.current[0]?.focus();
         return;
       }
-      const dest = r.data!.next === "/inicio" && next?.startsWith("/") && !next.startsWith("//") ? next : r.data!.next;
+      const safe = next?.startsWith("/") && !next.startsWith("//") ? next : undefined;
+      // Cuenta nueva: primero el registro y luego de vuelta a donde iba (por ejemplo, el torneo).
+      const dest = r.data!.next === "/inicio" ? (safe ?? "/inicio") : safe ? `${r.data!.next}?siguiente=${encodeURIComponent(safe)}` : r.data!.next;
       router.replace(dest);
       router.refresh();
     });

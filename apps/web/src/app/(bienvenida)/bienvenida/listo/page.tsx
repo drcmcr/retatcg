@@ -4,8 +4,10 @@ import { requireMe } from "@/lib/auth";
 
 export const metadata = { title: "¡A la caza!" };
 
-export default async function Listo() {
+export default async function Listo({ searchParams }: { searchParams: Promise<{ siguiente?: string }> }) {
   const me = await requireMe();
+  const sp = await searchParams;
+  const next = sp.siguiente?.startsWith("/") && !sp.siguiente.startsWith("//") ? sp.siguiente : undefined;
   return (
     <main className="app">
       <div className="chk screen" style={{ justifyContent: "center" }}>
@@ -15,9 +17,14 @@ export default async function Listo() {
           <div style={{ textAlign: "left" }}>
             <HunterCard d={{ userId: me.id, username: me.username, pr: me.pr, medals: me.medals, titleMedal: null, titleForm: null, season: me.season?.id }} />
           </div>
-          <Link href="/instalar" className="btn p">Siguiente: avisos</Link>
+          {next?.startsWith("/torneo/") ? (
+            <>
+              <Link href={next} className="btn p">Volver al torneo para inscribirme</Link>
+              <Link href="/instalar" className="btn s">Activar avisos (te recuerdan el check-in)</Link>
+            </>
+          ) : <Link href="/instalar" className="btn p">Siguiente: avisos</Link>}
           <Link href="/guia" className="btn g">Cómo funciona Reta (guía)</Link>
-          <Link href="/inicio" className="btn s">Ir a inicio</Link>
+          {!next && <Link href="/inicio" className="btn s">Ir a inicio</Link>}
         </div>
       </div>
     </main>
