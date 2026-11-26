@@ -1,4 +1,5 @@
 "use client";
+import { NumInput } from "@/components/NumInput";
 import { useMemo, useState, useTransition } from "react";
 import { PR_RULES, estimateTournamentMinutes, estimateWindowDays, recommendedSwissRounds, recommendedTopCut } from "@reta/torneo";
 import { createTournament, updateTournament } from "@/actions/staff";
@@ -171,11 +172,11 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
           <Seg label="Formato" value={f.format} onChange={(v) => !locked && set("format", v)} options={[["swiss_topcut", "Suizo + top cut"], ["swiss", "Solo suizo"], ["single_elim", "Eliminación directa"]]} />
           <InfoLabel k="numeros" text="Jugadores, rondas y cupo" {...il} />
           <div className="grid4">
-            <div className="fld"><label htmlFor="exp">Jugadores esperados</label><input id="exp" className="inp" type="number" min={2} max={256} value={f.expected}
-              onChange={(e) => { const n = Number(e.target.value); setF((x) => ({ ...x, expected: n, swiss_rounds: recommendedSwissRounds(n) || x.swiss_rounds, top_cut: x.format === "swiss_topcut" ? (recommendedTopCut(n) || 4) : x.top_cut })); }} /></div>
-            {f.format !== "single_elim" && <div className="fld"><label htmlFor="sr">Rondas suizas</label><input id="sr" className="inp" type="number" min={1} max={12} value={f.swiss_rounds} onChange={(e) => set("swiss_rounds", Number(e.target.value))} /></div>}
+            <div className="fld"><label htmlFor="exp">Jugadores esperados</label><NumInput id="exp" className="inp" min={2} max={256} value={f.expected}
+              onValue={(n) => { setF((x) => ({ ...x, expected: n, swiss_rounds: recommendedSwissRounds(n) || x.swiss_rounds, top_cut: x.format === "swiss_topcut" ? (recommendedTopCut(n) || 4) : x.top_cut })); }} /></div>
+            {f.format !== "single_elim" && <div className="fld"><label htmlFor="sr">Rondas suizas</label><NumInput id="sr" className="inp" min={1} max={12} value={f.swiss_rounds} onValue={(n) => set("swiss_rounds", n)} /></div>}
             {f.format === "swiss_topcut" && <div className="fld"><label htmlFor="tc">Top cut</label><select id="tc" className="inp" value={f.top_cut} onChange={(e) => set("top_cut", Number(e.target.value))}>{[2, 4, 8, 16].map((n) => <option key={n} value={n}>Top {n}</option>)}</select></div>}
-            <div className="fld"><label htmlFor="cap">Cupo</label><input id="cap" className="inp" type="number" min={2} max={256} value={f.capacity} onChange={(e) => set("capacity", Number(e.target.value))} /></div>
+            <div className="fld"><label htmlFor="cap">Cupo</label><NumInput id="cap" className="inp" min={2} max={256} value={f.capacity} onValue={(n) => set("capacity", n)} /></div>
           </div>
           <InfoLabel k="partidas" text="Bo1 o Bo3" {...il} />
           <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -189,8 +190,8 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
           {f.pace === "en_vivo" && (
             <div className="grid3">
               <div className="fld"><label htmlFor="st">Inicio</label><input id="st" className="inp" type="datetime-local" value={f.starts_at} onChange={(e) => set("starts_at", e.target.value)} /></div>
-              <div className="fld"><label htmlFor="ci">Check-in (min antes)</label><input id="ci" className="inp" type="number" min={5} max={180} value={f.checkin_minutes} onChange={(e) => set("checkin_minutes", Number(e.target.value))} /></div>
-              <div className="fld"><label htmlFor="rm">Minutos por ronda</label><input id="rm" className="inp" type="number" min={10} max={120} placeholder={f.swiss_best_of === 3 ? "50" : "25"} value={f.round_minutes} onChange={(e) => set("round_minutes", e.target.value)} /></div>
+              <div className="fld"><label htmlFor="ci">Check-in (min antes)</label><NumInput id="ci" className="inp" min={5} max={180} value={f.checkin_minutes} onValue={(n) => set("checkin_minutes", n)} /></div>
+              <div className="fld"><label htmlFor="rm">Minutos por ronda</label><input id="rm" className="inp" type="text" inputMode="numeric" pattern="[0-9]*" placeholder={f.swiss_best_of === 3 ? "50" : "25"} value={f.round_minutes} onChange={(e) => set("round_minutes", e.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 3))} /></div>
             </div>
           )}
           {f.pace === "ventana" && (
@@ -227,7 +228,7 @@ export function TournamentForm({ initial, id, locked, superadmin }: { initial?: 
                 <option value="permitidos">Permitidos</option><option value="sin_mega">Sin Mega ex</option><option value="prohibidos">Prohibidos</option><option value="solo_ex">Solo ex</option><option value="maximo">Máximo por mazo</option>
               </select>
             </div>
-            {f.restrictions.ex?.kind === "maximo" && <div className="fld"><label htmlFor="exm">Máximo de ex</label><input id="exm" className="inp" type="number" min={1} max={20} value={f.restrictions.ex.count ?? 2} onChange={(e) => setR({ ex: { kind: "maximo", count: Number(e.target.value) } })} disabled={locked} /></div>}
+            {f.restrictions.ex?.kind === "maximo" && <div className="fld"><label htmlFor="exm">Máximo de ex</label><NumInput id="exm" className="inp" min={1} max={20} value={f.restrictions.ex.count ?? 2} onValue={(n) => setR({ ex: { kind: "maximo", count: n } })} disabled={locked} /></div>}
           </div>
           <div className="fld"><label htmlFor="ban">Cartas prohibidas (separadas por coma)</label><input id="ban" className="inp" disabled={locked} value={(f.restrictions.bannedCards ?? []).join(", ")} onChange={(e) => setR({ bannedCards: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} /></div>
           <div className="row wrap" style={{ gap: 16 }}>

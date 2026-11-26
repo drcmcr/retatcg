@@ -1,4 +1,5 @@
 "use client";
+import { NumInput } from "@/components/NumInput";
 import { useState } from "react";
 import { setResult, staffMatch } from "@/actions/staff";
 import { ActionButton, useAction } from "@/components/client";
@@ -14,7 +15,7 @@ export function ResultForm({ matchId, a, b, bestOf, stage, current }: { matchId:
   const max = Math.ceil(bestOf / 2);
   const num = (v: number, set: (n: number) => void, label: string, top = max) => (
     <div className="fld" style={{ width: 110 }}><label>{label}</label>
-      <input className="inp mono" type="number" min={0} max={top} value={v} onChange={(e) => set(Math.max(0, Math.min(top, Number(e.target.value))))} disabled={dl} />
+      <NumInput className="inp mono" min={0} max={top} value={v} onValue={(n) => set(Math.max(0, Math.min(top, n)))} disabled={dl} aria-label={label} />
     </div>
   );
   return (
