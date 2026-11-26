@@ -42,8 +42,8 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
                 <td data-label="Asistencia" className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</td>
                 <td data-label="Estado">{ST[r.status]}</td>
                 <td className="r nw act">
-                  {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={() => staffRegistration(r.id, "checkin")} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
-                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="link" action={() => staffRegistration(r.id, "remove")} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
+                  {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
+                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="link" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
                 </td>
               </tr>
             ))}
@@ -58,7 +58,7 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
               <div key={s.user_id} className="li n4">
                 <Identicon seed={s.user_id} size={28} />
                 <span className="grow"><span className="ttl">{(s.profile as { username?: string } | null)?.username}</span><span className="xs">{s.role === "judge" ? "Juez" : "Organizador"}</span></span>
-                {s.user_id !== t.organizer_id && <ActionButton className="link" action={() => removeStaff(t.id, s.user_id)} ok="Quitado.">Quitar</ActionButton>}
+                {s.user_id !== t.organizer_id && <ActionButton className="link" action={removeStaff} args={[t.id, s.user_id]} ok="Quitado.">Quitar</ActionButton>}
               </div>
             ))}
             <AddJudge id={t.id} />

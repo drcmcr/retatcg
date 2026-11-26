@@ -32,11 +32,11 @@ export default async function Checkin({ params }: { params: Promise<{ code: stri
       {mine?.status === "checked_in" ? (
         <div className="btn s" role="status">Ya estás. Te avisamos cuando salga tu mesa.</div>
       ) : mine?.status === "registered" ? (
-        <ActionButton action={() => checkin(t.id)} ok="Check-in listo. ¡Suerte!">Estoy aquí</ActionButton>
+        <ActionButton action={checkin} args={[t.id]} ok="Check-in listo. ¡Suerte!">Estoy aquí</ActionButton>
       ) : mine?.status === "waitlist" && mine.checked_in_at ? (
         <div className="btn s" role="status">Estás presente en la lista de espera. Si alguien falta, entras y te avisamos.</div>
       ) : mine?.status === "waitlist" ? (
-        <ActionButton action={() => checkin(t.id)} ok="Listo: si alguien falta, entras tú.">Estoy aquí (lista de espera)</ActionButton>
+        <ActionButton action={checkin} args={[t.id]} ok="Listo: si alguien falta, entras tú.">Estoy aquí (lista de espera)</ActionButton>
       ) : (
         <p className="sm">No tienes un lugar en este torneo.</p>
       )}

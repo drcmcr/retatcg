@@ -52,7 +52,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
           <span className="sm">Nadie lo ve todavía. Revisa la vista previa antes de publicar. Al publicarlo se abre la inscripción{["clasificatorio", "mayor"].includes(t.category) ? " (o se pide aprobación al superadmin)" : ""}.</span>
           <div className="row wrap" style={{ gap: 8 }}>
             <Link href={`/staff/torneo/${t.id}/vista-previa`} className="btn s"><Icon name="eye" size={18} />Ver vista previa</Link>
-            <ActionButton action={() => publishTournament(t.id)} ok="Publicado.">Publicar torneo</ActionButton>
+            <ActionButton action={publishTournament} args={[t.id]} ok="Publicado.">Publicar torneo</ActionButton>
           </div>
         </div>
       )}
@@ -72,14 +72,14 @@ export default async function Control({ params }: { params: Promise<{ id: string
                 {t.pace.kind === "ventana" ? `Empieza solo el ${fmtDateTime(t.starts_at)}: todos los inscritos juegan. También puedes empezarlo ahora.`
                   : `Juegan quienes hicieron check-in (${checked}). Los demás quedan fuera. Inicio programado: ${fmtDateTime(t.starts_at)}.`}
               </span>
-              <ActionButton action={() => startTournament(t.id)} ok="¡Empezó! Ronda 1 emparejada." confirm={`¿Empezar con ${t.pace.kind === "ventana" ? registered : checked} jugadores?`}
+              <ActionButton action={startTournament} args={[t.id]} ok="¡Empezó! Ronda 1 emparejada." confirm={`¿Empezar con ${t.pace.kind === "ventana" ? registered : checked} jugadores?`}
                 disabled={(t.pace.kind === "ventana" ? registered : checked) < 2}>Empezar y emparejar ronda 1</ActionButton>
             </div>
             <Link href={`/staff/torneo/${t.id}/inscritos`} className="btn g">Ver inscritos, invitados y jueces</Link>
           </div>
           <div className="col" style={{ gap: 12 }}>
             <Announcement id={t.id} current={t.announcement} />
-            <ActionButton className="btn d" action={() => cancelTournament(t.id)} confirm="¿Cancelar el torneo? Se avisa a todos los inscritos." ok="Torneo cancelado.">Cancelar torneo</ActionButton>
+            <ActionButton className="btn d" action={cancelTournament} args={[t.id]} confirm="¿Cancelar el torneo? Se avisa a todos los inscritos." ok="Torneo cancelado.">Cancelar torneo</ActionButton>
           </div>
         </div>
       )}
@@ -102,8 +102,8 @@ export default async function Control({ params }: { params: Promise<{ id: string
                     </div>
                     {t.pace.kind === "ventana" && m.status !== "confirmed" && m.b && (
                       <div className="row" style={{ gap: 6 }}>
-                        <ActionButton className="btn s sm" action={() => staffMatch(m.id, "recordar")} ok="Recordatorio enviado.">Recordar</ActionButton>
-                        <ActionButton className="btn s sm" action={() => staffMatch(m.id, "extender", 12)} ok="Plazo extendido 12 h." disabled={m.extension_hours >= 24}>+12 h</ActionButton>
+                        <ActionButton className="btn s sm" action={staffMatch} args={[m.id, "recordar"]} ok="Recordatorio enviado.">Recordar</ActionButton>
+                        <ActionButton className="btn s sm" action={staffMatch} args={[m.id, "extender", 12]} ok="Plazo extendido 12 h." disabled={m.extension_hours >= 24}>+12 h</ActionButton>
                       </div>
                     )}
                   </div>
@@ -122,9 +122,9 @@ export default async function Control({ params }: { params: Promise<{ id: string
                 {t.pace.kind !== "ventana" && (
                   <div className="col" style={{ gap: 6 }}>
                     {round.status === "paused"
-                      ? <ActionButton className="btn g sm" action={() => roundClock(round.id, "reanudar")}>Reanudar</ActionButton>
-                      : <ActionButton className="btn g sm" action={() => roundClock(round.id, "pausar")}>Pausar</ActionButton>}
-                    <ActionButton className="btn g sm" action={() => roundClock(round.id, "agregar", 5)} ok="+5 minutos.">+5 min</ActionButton>
+                      ? <ActionButton className="btn g sm" action={roundClock} args={[round.id, "reanudar"]}>Reanudar</ActionButton>
+                      : <ActionButton className="btn g sm" action={roundClock} args={[round.id, "pausar"]}>Pausar</ActionButton>}
+                    <ActionButton className="btn g sm" action={roundClock} args={[round.id, "agregar", 5]} ok="+5 minutos.">+5 min</ActionButton>
                   </div>
                 )}
               </div>
@@ -136,7 +136,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
             <div className="box n4 col" style={{ gap: 8 }}>
               <b>{t.pace.kind === "ventana" ? "Cerrar ronda" : "Siguiente ronda"}</b>
               <span className="sm">{pending ? `Faltan ${pending} mesas. Se activa cuando todas estén confirmadas.` : "Todas las mesas confirmaron."}{t.pace.kind === "ventana" ? " Al vencer el plazo, Reta aplica las reglas y avanza sola." : ""}</span>
-              <ActionButton action={() => nextRound(t.id)} disabled={pending > 0} ok="Listo.">
+              <ActionButton action={nextRound} args={[t.id]} disabled={pending > 0} ok="Listo.">
                 {round.stage === "swiss" && round.number >= t.swiss_rounds ? (t.format === "swiss_topcut" ? "Empezar top cut" : "Terminar torneo") : current.filter((m) => m.b).length === 1 && round.stage === "top" ? "Terminar torneo" : `Emparejar ronda ${round.number + 1}`}
               </ActionButton>
             </div>

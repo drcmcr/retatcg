@@ -28,7 +28,7 @@ export default async function VistaPrevia({ params }: { params: Promise<{ id: st
         <div className="row wrap">
           <Link href={`/staff/torneo/${t.id}`} className="btn g sm"><Icon name="back" size={18} />Panel</Link>
           {["draft", "pending_approval", "registration"].includes(t.status) && <Link href={`/staff/torneo/${t.id}/editar`} className="btn g sm"><Icon name="edit" size={18} />Editar</Link>}
-          {t.status === "draft" && <ActionButton className="btn p sm" action={() => publishTournament(t.id)} ok="Publicado.">Publicar torneo</ActionButton>}
+          {t.status === "draft" && <ActionButton className="btn p sm" action={publishTournament} args={[t.id]} ok="Publicado.">Publicar torneo</ActionButton>}
         </div>
       </div>
 

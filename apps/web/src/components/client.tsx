@@ -59,10 +59,16 @@ export function useAction() {
   return { run, pending };
 }
 
+/**
+ * Botón que corre una acción del servidor. Desde un Server Component pasa la acción tal cual y sus
+ * argumentos en `args` (una función flecha no se puede mandar al cliente); desde un Client Component
+ * también se vale una función flecha.
+ */
 export function ActionButton({
-  action, children, className = "btn p", ok, confirm, disabled, then, ...rest
+  action, args, children, className = "btn p", ok, confirm, disabled, then, ...rest
 }: {
-  action: () => Promise<Result>; children: ReactNode; className?: string; ok?: string; confirm?: string; disabled?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  action: (...a: any[]) => Promise<Result>; args?: unknown[]; children: ReactNode; className?: string; ok?: string; confirm?: string; disabled?: boolean;
   then?: (data: unknown) => void; "aria-label"?: string; style?: React.CSSProperties;
 }) {
   const { run, pending } = useAction();
@@ -74,7 +80,7 @@ export function ActionButton({
       aria-busy={pending}
       onClick={() => {
         if (confirm && !window.confirm(confirm)) return;
-        void run(action, { ok, then });
+        void run(() => action(...(args ?? [])), { ok, then });
       }}
       {...rest}
     >
