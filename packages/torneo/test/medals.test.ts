@@ -26,6 +26,13 @@ describe("medallas", () => {
     expect(earnedMedals([T({ matches: [win(1), win(2), bye, win(4), win(5), win(6)] })]).has("savia")).toBe(true);
   });
 
+  it("Vórtice pide terminar el suizo: quien se va invicto antes de la última ronda no la gana", () => {
+    // El servidor pasa las rondas suizas del torneo y suma como derrota cada ronda que no jugó.
+    const leftAt3of5 = T({ swissRounds: 5, swissLosses: 2 }); // 3-0 y se retiró: faltaron 2 rondas
+    expect(earnedMedals([leftAt3of5]).has("vortice")).toBe(false);
+    expect(earnedMedals([T({ swissRounds: 5, swissLosses: 0 })]).has("vortice")).toBe(true);
+  });
+
   it("Volcán solo en Clasificatorio o Mayor; Cauce con 5 torneos", () => {
     expect(earnedMedals([T({ placement: 7 })]).has("volcan")).toBe(false);
     expect(earnedMedals([T({ category: "mayor", placement: 7 })]).has("volcan")).toBe(true);

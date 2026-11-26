@@ -287,6 +287,13 @@ it("simula el torneo completo", { timeout: 300_000 }, async () => {
   const medalOk = results.filter((r) => r.user_id).every((r) => (r.new_medals as string[]).every((m) => (bySeason.get(r.user_id)!.medals as string[]).includes(m)));
   check("Las medallas nuevas quedan guardadas en la temporada", medalOk);
   check("Se otorgó al menos una medalla", results.some((r) => (r.new_medals as string[]).length > 0), results.map((r) => r.new_medals));
+  // Quien dejó el torneo (no llegó a su mesa en la R2) recibe derrota por cada ronda suiza que no jugó.
+  const quitter = results.find((r) => r.user_id && r.pr_breakdown?.rondasSinJugar > 0);
+  const finishers = results.filter((r) => r.user_id && r.pr_breakdown?.rondasSinJugar === 0 && r.placement > 4);
+  check("Quien deja el torneo recibe derrota por las rondas suizas que no jugó", !!quitter && quitter.pr_breakdown.unplayed < 0, quitter?.pr_breakdown);
+  check("Dejar el torneo nunca da más PR que terminarlo con el mismo número de victorias",
+    !!quitter && finishers.filter((f) => f.wins >= quitter.wins).every((f) => quitter.pr_delta <= f.pr_delta),
+    { retirado: quitter && [quitter.username, quitter.wins, quitter.pr_delta], terminaron: finishers.map((f) => [f.username, f.wins, f.pr_delta]) });
   const absentPR = await sql`select pr from public.player_seasons where user_id = ${users.get("mictlan99")!}`;
   check("Quien no se presentó no gana PR", (absentPR[0]?.pr ?? 0) === 0, absentPR[0]);
   const resNotes = await sql`select count(distinct user_id)::int n from public.notifications where link like ${"/resultado/" + tid + "%"}`;

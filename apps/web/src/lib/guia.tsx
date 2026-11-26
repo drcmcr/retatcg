@@ -108,7 +108,7 @@ export const CHAPTERS: Chapter[] = [
         <p>El torneo puede tener restricciones (cartas prohibidas, solo ex, sin Mega ex, rango mínimo). Las ves en la pestaña Info. Tu mazo solo lo ve el staff, que lo aprueba o te pide cambiarlo.</p>
         <h2>Premios</h2>
         <p>Si el torneo tiene premios, los ves en la pestaña Info: qué se lleva cada lugar (cartas digitales, Pase Premium, dinero, premios físicos u otros) y cómo se entregan. Los entrega el organizador; Reta no participa en su entrega.</p>
-        <Tip>¿No puedes seguir? Usa <b>Retirarme del torneo</b> desde la página del torneo. Así tu rival no espera y la tabla se mantiene limpia.</Tip>
+        <Tip>¿No puedes seguir? Usa <b>Retirarme del torneo</b> desde la página del torneo. Así tu rival no espera y la tabla se mantiene limpia. Ojo: cada ronda suiza que ya no juegues cuenta como derrota para tu PR, para que retirarse nunca convenga más que terminar.</Tip>
       </>
     ),
   },

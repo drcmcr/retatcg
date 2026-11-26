@@ -19,7 +19,7 @@ export default async function Resultado({ params }: { params: Promise<{ id: stri
   const before = Math.max(0, me.pr - r.pr_delta);
   const rankBefore = rankFromPR(before);
   const rankNow = rankFromPR(me.pr);
-  const b = r.pr_breakdown as { wins?: number; losses?: number; draws?: number; placementBonus?: number; multiplier?: number; eligible?: boolean; reason?: string };
+  const b = r.pr_breakdown as { wins?: number; losses?: number; draws?: number; unplayed?: number; rondasSinJugar?: number; placementBonus?: number; multiplier?: number; eligible?: boolean; reason?: string };
   return (
     <main className="app" style={{ minHeight: "auto" }}>
       <ResultSteps

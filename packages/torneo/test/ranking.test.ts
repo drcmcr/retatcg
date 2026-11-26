@@ -1,4 +1,4 @@
-import { applyPRDelta, countableWins, rankFromPR, seasonSoftReset, tournamentPR } from "../src";
+import { applyPRDelta, countableWins, rankFromPR, seasonSoftReset, tournamentPR, unplayedSwissRounds } from "../src";
 
 describe("rankFromPR", () => {
   it.each([
@@ -35,6 +35,24 @@ describe("tournamentPR", () => {
   it("aplica el multiplicador por categoría", () => {
     expect(tournamentPR({ category: "clasificatorio", accountPlayers: 20, wins: 4, losses: 1, draws: 0, placement: 4 }).total).toBe(120);
     expect(tournamentPR({ category: "mayor", accountPlayers: 20, wins: 5, losses: 0, draws: 0, placement: 1 }).total).toBe(270);
+  });
+
+  it("retirarse no conviene: cada ronda suiza sin jugar cuenta como derrota", () => {
+    // Suizo de 3 rondas: gana 1, pierde 1 (no se presentó) y deja el torneo; la ronda 3 cuenta como derrota.
+    const dropped = tournamentPR({ category: "comunitario", accountPlayers: 16, wins: 1, losses: 1, draws: 0, placement: 14, unplayedRounds: 1 });
+    const stayed = tournamentPR({ category: "comunitario", accountPlayers: 16, wins: 1, losses: 2, draws: 0, placement: 12 });
+    expect(dropped).toMatchObject({ unplayed: -5, total: 5 });
+    expect(dropped.total).toBeLessThanOrEqual(stayed.total);
+    // Si se va 1-0 en la ronda 1, tampoco supera a quien termina 1-2.
+    const early = tournamentPR({ category: "comunitario", accountPlayers: 16, wins: 1, losses: 0, draws: 0, placement: 10, unplayedRounds: 2 });
+    expect(early.total).toBeLessThanOrEqual(stayed.total);
+  });
+
+  it("solo cuentan las rondas suizas que faltaron a quien dejó el torneo", () => {
+    expect(unplayedSwissRounds(false, 5, 3)).toBe(0);
+    expect(unplayedSwissRounds(true, 5, 3)).toBe(2);
+    expect(unplayedSwissRounds(true, 3, 3)).toBe(0);
+    expect(unplayedSwissRounds(true, 0, 0)).toBe(0);
   });
 
   it("el empate da +5 y el bye cuenta como victoria", () => {

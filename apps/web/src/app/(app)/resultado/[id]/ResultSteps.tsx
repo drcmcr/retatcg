@@ -9,7 +9,7 @@ import { fmtNum } from "@/lib/format";
 type Props = {
   tournament: { name: string; code: string; top: number; category: string };
   result: { placement: number; wins: number; losses: number; draws: number; prDelta: number; newMedals: string[]; players: number };
-  breakdown: { wins?: number; losses?: number; draws?: number; placementBonus?: number; multiplier?: number; eligible?: boolean; reason?: string };
+  breakdown: { wins?: number; losses?: number; draws?: number; unplayed?: number; rondasSinJugar?: number; placementBonus?: number; multiplier?: number; eligible?: boolean; reason?: string };
   pr: { before: number; now: number };
   rank: { beforeName: string; nowName: string; up: boolean };
   card: CardData;
@@ -43,6 +43,7 @@ export function ResultSteps(p: Props) {
               <Line l={`Victorias × ${r.wins}`} v={p.breakdown.wins ?? 0} />
               <Line l={`Derrotas × ${r.losses}`} v={p.breakdown.losses ?? 0} />
               {r.draws > 0 && <Line l={`Empates × ${r.draws}`} v={p.breakdown.draws ?? 0} />}
+              {(p.breakdown.unplayed ?? 0) < 0 && <Line l={`Rondas sin jugar × ${p.breakdown.rondasSinJugar ?? 0} (dejaste el torneo)`} v={p.breakdown.unplayed!} />}
               {(p.breakdown.placementBonus ?? 0) > 0 && <Line l="Bono por lugar" v={p.breakdown.placementBonus!} />}
               <div className="sep" />
               <Line l={`${CATEGORY[p.tournament.category]?.label} ×${p.breakdown.multiplier}`} v={r.prDelta} strong />

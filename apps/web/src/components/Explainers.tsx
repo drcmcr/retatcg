@@ -55,6 +55,7 @@ export function PRTable() {
     ["Victoria de encuentro", `+${PR_RULES.matchWin}`],
     ["Empate", `+${PR_RULES.matchDraw}`],
     ["Derrota", `${PR_RULES.matchLoss}`.replace("-", "−")],
+    ["Ronda suiza sin jugar (si dejas el torneo)", `${PR_RULES.matchLoss}`.replace("-", "−")],
     ["Campeón", `+${b.first}`],
     ["Segundo lugar", `+${b.second}`],
     ["Top 4", `+${b.top4}`],

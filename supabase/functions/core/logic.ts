@@ -234,6 +234,8 @@ async function finalizeInTx(tx: Sql, t: Row, actor: string | null) {
   const topRows = all.rows.filter((m) => m.stage === "top");
   const placement = finalPlacements(t, regs, swiss, topRows);
   const accountPlayers = regs.filter((r) => r.user_id).length;
+  // Rondas suizas que tuvo el torneo: quien lo dejó antes recibe derrota por cada una que no jugó.
+  const swissTotal = new Set(all.rows.filter((m) => m.stage === "swiss").map((m) => m.round_id)).size;
   const season: number | null = t.season_id;
   const weekAgo = new Date(new Date(t.started_at ?? Date.now()).getTime() - 7 * 24 * HOUR);
   const finishedAt = new Date();
@@ -260,6 +262,8 @@ async function finalizeInTx(tx: Sql, t: Row, actor: string | null) {
       });
     }
     const place = placement.get(r.id)!;
+    const swissPlayed = mine.filter((m) => m.stage === "swiss").length;
+    const unplayed = E.unplayedSwissRounds(r.status === "dropped", swissTotal, swissPlayed);
     let prDelta = 0;
     let breakdown: Row = {};
     let fresh: string[] = [];
@@ -275,8 +279,8 @@ async function finalizeInTx(tx: Sql, t: Row, actor: string | null) {
         group by 1`;
       for (const p of previous) prior[p.rival] = p.n;
       const countable = E.countableWins(winsAgainst, prior) + mine.filter((m) => m.b === null).length;
-      const pr = E.tournamentPR({ category: t.category, accountPlayers, wins: countable, losses, draws, placement: place });
-      breakdown = { ...pr, victoriasContadas: countable };
+      const pr = E.tournamentPR({ category: t.category, accountPlayers, wins: countable, losses, draws, placement: place, unplayedRounds: unplayed });
+      breakdown = { ...pr, victoriasContadas: countable, rondasSinJugar: unplayed };
       const [ps] = await tx`
         insert into public.player_seasons (season_id, user_id) values (${season}, ${r.user_id})
         on conflict (season_id, user_id) do update set season_id = excluded.season_id returning *`;
@@ -293,8 +297,8 @@ async function finalizeInTx(tx: Sql, t: Row, actor: string | null) {
         category: t.category,
         accountPlayers,
         placement: place,
-        swissRounds: swiss ? mine.filter((m) => m.stage === "swiss").length : null,
-        swissLosses: swiss ? mine.filter((m) => m.stage === "swiss" && (m.double_loss || (m.winner && m.winner !== r.id))).length : null,
+        swissRounds: swiss ? swissPlayed + unplayed : null,
+        swissLosses: swiss ? mine.filter((m) => m.stage === "swiss" && (m.double_loss || (m.winner && m.winner !== r.id))).length + unplayed : null,
         matches: seasonMatches,
       });
       fresh = E.newMedals(ps.medals ?? [], history);
@@ -327,7 +331,8 @@ async function finalizeInTx(tx: Sql, t: Row, actor: string | null) {
 /** Historial de la temporada para las medallas (torneos ya terminados, sin el actual). */
 async function seasonHistory(tx: Sql, userId: string, season: number, exceptTournament: string): Promise<E.SeasonTournament[]> {
   const rows: Row[] = await tx`
-    select res.tournament_id, res.placement, t.category, me.id as reg_id, me.rank_at_start,
+    select res.tournament_id, res.placement, t.category, me.id as reg_id, me.rank_at_start, me.status as reg_status,
+      (select count(*)::int from public.rounds ro where ro.tournament_id = t.id and ro.stage = 'swiss') as swiss_total,
       (select count(*)::int from public.registrations x where x.tournament_id = t.id and x.user_id is not null
          and x.status in ('checked_in', 'dropped')) as account_players
     from public.results res
@@ -342,12 +347,13 @@ async function seasonHistory(tx: Sql, userId: string, season: number, exceptTour
       left join public.registrations rv on rv.id = case when m.a = ${r.reg_id} then m.b else m.a end
       where m.tournament_id = ${r.tournament_id} and ${r.reg_id} in (m.a, m.b) and m.status = 'confirmed'`;
     const swissMs = ms.filter((m) => m.stage === "swiss");
+    const missed = E.unplayedSwissRounds(r.reg_status === "dropped", r.swiss_total, swissMs.length);
     out.push({
       category: r.category,
       accountPlayers: r.account_players,
       placement: r.placement,
-      swissRounds: swissMs.length || null,
-      swissLosses: swissMs.length ? swissMs.filter((m) => m.double_loss || (m.winner && m.winner !== r.reg_id)).length : null,
+      swissRounds: swissMs.length ? swissMs.length + missed : null,
+      swissLosses: swissMs.length ? swissMs.filter((m) => m.double_loss || (m.winner && m.winner !== r.reg_id)).length + missed : null,
       matches: ms.map((m) => ({
         at: new Date(m.confirmed_at ?? m.created_at).getTime(),
         result: m.b === null ? "bye" : m.double_loss ? "loss" : m.winner === r.reg_id ? "win" : m.winner ? "loss" : "draw",

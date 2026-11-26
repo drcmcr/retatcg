@@ -67,6 +67,11 @@ export interface TournamentPRInput {
   draws: number;
   /** Posición final (1 = campeón). */
   placement: number;
+  /**
+   * Rondas suizas que ya no jugó porque dejó el torneo antes de terminar (se retiró, no se presentó a su mesa
+   * o lo sacó el staff). Cada una cuenta como derrota para que retirarse nunca convenga más que seguir jugando.
+   */
+  unplayedRounds?: number;
 }
 
 export interface PRBreakdown {
@@ -75,6 +80,8 @@ export interface PRBreakdown {
   wins: number;
   losses: number;
   draws: number;
+  /** Puntos restados por rondas suizas que no jugó al dejar el torneo (negativo o 0). */
+  unplayed: number;
   placementBonus: number;
   multiplier: number;
   total: number;
@@ -82,7 +89,7 @@ export interface PRBreakdown {
 
 export function tournamentPR(input: TournamentPRInput): PRBreakdown {
   const multiplier = PR_RULES.multiplier[input.category];
-  const base = { wins: 0, losses: 0, draws: 0, placementBonus: 0, multiplier, total: 0 };
+  const base = { wins: 0, losses: 0, draws: 0, unplayed: 0, placementBonus: 0, multiplier, total: 0 };
   if (multiplier === 0) return { ...base, eligible: false, reason: "Los torneos casuales no dan PR." };
   if (input.accountPlayers < PR_RULES.minAccountPlayers) {
     return { ...base, eligible: false, reason: `Se necesitan al menos ${PR_RULES.minAccountPlayers} jugadores con cuenta.` };
@@ -90,11 +97,20 @@ export function tournamentPR(input: TournamentPRInput): PRBreakdown {
   const wins = input.wins * PR_RULES.matchWin;
   const losses = input.losses * PR_RULES.matchLoss;
   const draws = input.draws * PR_RULES.matchDraw;
+  const unplayed = Math.max(0, input.unplayedRounds ?? 0) * PR_RULES.matchLoss;
   const b = PR_RULES.placementBonus;
   const placementBonus =
     input.placement === 1 ? b.first : input.placement === 2 ? b.second : input.placement <= 4 ? b.top4 : input.placement <= 8 ? b.top8 : 0;
-  const total = Math.round((wins + losses + draws + placementBonus) * multiplier);
-  return { eligible: true, wins, losses, draws, placementBonus, multiplier, total };
+  const total = Math.round((wins + losses + draws + unplayed + placementBonus) * multiplier);
+  return { eligible: true, wins, losses, draws, unplayed, placementBonus, multiplier, total };
+}
+
+/**
+ * Rondas suizas que un jugador dejó sin jugar. Solo cuenta si dejó el torneo antes de terminar; el top cut no
+ * cuenta porque tampoco lo juegan quienes no clasificaron. Los byes cuentan como ronda jugada.
+ */
+export function unplayedSwissRounds(dropped: boolean, swissRoundsInTournament: number, swissRoundsPlayed: number): number {
+  return dropped ? Math.max(0, swissRoundsInTournament - swissRoundsPlayed) : 0;
 }
 
 /**

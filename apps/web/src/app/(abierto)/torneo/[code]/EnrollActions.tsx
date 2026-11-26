@@ -43,7 +43,7 @@ export function EnrollActions({ t, me, reg, matchId }: Props) {
       <>
         {matchId && <Link href={`/mesa/${matchId}`} className="btn p"><Icon name="play" size={20} />Ir a mi mesa</Link>}
         {t.policy === "por_ronda" && <Link href={`/torneo/${t.code}/mazo`} className="btn s">Declarar mazo para la siguiente ronda</Link>}
-        <ActionButton className="btn d sm" action={() => dropTournament(t.id)} confirm="¿Retirarte del torneo? Ya no te emparejarán y no puedes volver." ok="Te retiraste del torneo.">Retirarme del torneo</ActionButton>
+        <ActionButton className="btn d sm" action={() => dropTournament(t.id)} confirm="¿Retirarte del torneo? Ya no te emparejarán, no puedes volver y cada ronda suiza que falte cuenta como derrota para tu PR." ok="Te retiraste del torneo.">Retirarme del torneo</ActionButton>
       </>
     );
   }
