@@ -20,15 +20,15 @@ export function JudgeTools({ caseId, tournamentId, resolved, players }: { caseId
   const [kind, setKind] = useState(0);
   const [reason, setReason] = useState("");
   const { run, pending } = useAction();
-  if (resolved) return <div className="box n4 sm">Caso resuelto.</div>;
   return (
     <>
-      <div className="box n4 col" style={{ gap: 8 }}>
+      {resolved && <div className="box n4 sm">Caso resuelto. Si hace falta, todavía puedes aplicar una sanción.</div>}
+      {!resolved && <div className="box n4 col" style={{ gap: 8 }}>
         <b>Mensaje a los jugadores</b>
         <div className="chips">{TEMPLATES.map((tpl) => <button key={tpl} className="chip o" style={{ whiteSpace: "normal", textAlign: "left", minHeight: 36, padding: "6px 10px" }} onClick={() => setMsg(tpl)}>{tpl}</button>)}</div>
         <textarea className="inp" maxLength={500} value={msg} onChange={(e) => setMsg(e.target.value)} aria-label="Mensaje del juez" />
         <button className="btn s sm" disabled={pending || !msg.trim()} onClick={() => run(() => judgeMessage(caseId, msg), { ok: "Mensaje enviado.", then: () => setMsg("") })}>Enviar</button>
-      </div>
+      </div>}
       {players.length > 0 && (
         <div className="box n4 col" style={{ gap: 8 }}>
           <b>Sanción (opcional)</b>
@@ -38,11 +38,12 @@ export function JudgeTools({ caseId, tournamentId, resolved, players }: { caseId
           <button className="btn d sm" disabled={pending || !reason.trim()} onClick={() => { const s = SANCTIONS[kind]!; run(() => addSanction(who, tournamentId, s[0], reason, s[2], s[3]), { ok: "Sanción aplicada.", then: () => setReason("") }); }}>Aplicar sanción</button>
         </div>
       )}
-      <div className="box n4 col" style={{ gap: 8 }}>
+      {!resolved && <div className="box n4 col" style={{ gap: 8 }}>
         <b>Cerrar el caso</b>
         <input className="inp" value={res} maxLength={300} onChange={(e) => setRes(e.target.value)} placeholder="Ej. Gana sofi.p 2-1 con la captura del juego 3" aria-label="Resolución" />
         <button className="btn p" disabled={pending || !res.trim()} onClick={() => run(() => resolveCase(caseId, res), { ok: "Caso resuelto." })}>Resolver caso</button>
-      </div>
+        <span className="xs">Si pones el resultado de la mesa, el caso se cierra solo con tu motivo.</span>
+      </div>}
     </>
   );
 }

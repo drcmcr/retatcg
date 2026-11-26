@@ -10,7 +10,7 @@ export function TopBar({ title, back, right }: { title?: string; back?: string |
           <Icon name="back" />
         </Link>
       )}
-      <h1>{title}</h1>
+      {title ? <h1>{title}</h1> : <span className="grow" />}
       {right}
     </div>
   );

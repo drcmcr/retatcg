@@ -174,7 +174,10 @@ describe("torneo en vivo: suizo + top 4", () => {
     expect(c!.kind).toBe("marcador");
     await expect(as(org, (tx) => tx`select public.resolve_case(${c!.id}, 'x')`)).rejects.toThrow(/resultado/);
     await as(org, (tx) => tx`select public.staff_set_result(${m!.id}, 1, 0, 0, false, 'Captura del juego 1')`);
-    await as(org, (tx) => tx`select public.resolve_case(${c!.id}, 'Gana con la captura')`);
+    // Poner el resultado cierra el caso de marcador; cerrarlo otra vez avisa que ya está resuelto.
+    const [closed] = await sql`select status, resolution from public.cases where id = ${c!.id}`;
+    expect(closed).toMatchObject({ status: "resolved", resolution: "El juez puso el resultado: Captura del juego 1" });
+    await expect(as(org, (tx) => tx`select public.resolve_case(${c!.id}, 'Gana con la captura')`)).rejects.toThrow(/ya está resuelto/);
     await nextRound(sql, id, org);
     const [t] = await sql`select status from public.tournaments where id = ${id}`;
     expect(t!.status).toBe("finished");

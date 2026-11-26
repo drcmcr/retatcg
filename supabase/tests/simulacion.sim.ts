@@ -230,6 +230,8 @@ it("simula el torneo completo", { timeout: 300_000 }, async () => {
         await as(ua, (tx) => tx`select public.call_judge(${m.id}, 'ausente')`);
         await as(judge, (tx) => tx`select public.staff_no_show(${m.id}, ${m.b})`);
         step(`R2 mesa ${m.table_no}: ${who(m.b)} no llega; la jueza marca la falta y queda fuera del torneo`);
+        const openCases = await sql`select count(*)::int n from public.cases where match_id = ${m.id} and status <> 'resolved' and kind = 'ausente'`;
+        check("El caso de ausencia se cierra al marcar la falta", openCases[0]!.n === 0, openCases[0]!.n);
         dramaDone.noshow = true;
         continue;
       }
@@ -247,6 +249,8 @@ it("simula el torneo completo", { timeout: 300_000 }, async () => {
         const c = await as(ub, (tx) => tx`select public.dispute_result(${m.id}) as c`);
         await as(judge, (tx) => tx`select public.staff_set_result(${m.id}, ${ga}, ${gb}, 0, false, 'Revisé las capturas de ambos')`);
         step(`R${round!.number} mesa ${m.table_no}: ${who(m.a)} reporta ${win}-0, ${who(m.b)} lo disputa (caso ${c[0]!.c}); la jueza fija ${ga}-${gb}`);
+        const [cs] = await sql`select status from public.cases where id = ${c[0]!.c}`;
+        check("El caso de disputa se cierra al poner el resultado", cs!.status === "resolved", cs!.status);
         dramaDone.dispute = true;
         continue;
       }

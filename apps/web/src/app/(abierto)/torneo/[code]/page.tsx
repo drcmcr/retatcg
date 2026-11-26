@@ -41,6 +41,10 @@ export default async function Torneo({ params, searchParams }: { params: Promise
   const rest = describeRestrictions(t.restrictions);
   const effPolicy = t.deck_policy === "libre" && rest.length ? "por_ronda" : t.deck_policy;
   const myMatch = mine ? matches.filter((m) => m.a === mine.id || m.b === mine.id).at(-1) : undefined;
+  // Torneo terminado: la tabla muestra primero el resultado final (incluye el top cut).
+  const { data: finals } = t.status === "finished" && tab === "tabla"
+    ? await supabase.from("results").select("registration_id,placement,wins,losses,draws").eq("tournament_id", t.id).order("placement")
+    : { data: null };
 
   return (
     <main className="screen">
@@ -153,6 +157,24 @@ export default async function Torneo({ params, searchParams }: { params: Promise
         if (!rows.length || !matches.length) return <Empty icon="chart" title="La tabla sale con la primera ronda" />;
         return (
           <>
+            {finals && finals.length > 0 && (
+              <>
+                <span className="lbl" style={{ fontSize: 16 }}>Resultado final</span>
+                <table className="tbl">
+                  <thead><tr><th>Lugar</th><th>Jugador</th><th className="r">G-P-E</th></tr></thead>
+                  <tbody>
+                    {finals.map((f) => (
+                      <tr key={f.registration_id} className={mine?.id === f.registration_id ? "me" : ""}>
+                        <td className="mono">{f.placement}</td>
+                        <td style={{ fontWeight: 700 }}>{regName(byId.get(f.registration_id))}</td>
+                        <td className="r mono nw">{f.wins}-{f.losses}-{f.draws}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <span className="lbl" style={{ fontSize: 16, marginTop: 8 }}>Tabla del suizo</span>
+              </>
+            )}
             <span className="xs">Después de la ronda {rounds.filter((r) => r.stage === "swiss" && r.status === "closed").length || t.current_round} · desempates OMW%, OOMW%, GW%</span>
             <table className="tbl">
               <thead><tr><th>#</th><th>Jugador</th><th className="r">Pts</th><th className="r">G-P-E</th><th className="r">OMW</th></tr></thead>
