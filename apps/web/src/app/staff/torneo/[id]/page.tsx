@@ -9,6 +9,7 @@ import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, loadRounds, regName } from "@/lib/tournament";
 import { Announcement } from "./Announcement";
 import { ShareBox } from "./ShareBox";
+import { DeleteTournament } from "./DeleteTournament";
 import { Invites, type Invite } from "./Invites";
 import { supabaseServer } from "@/lib/supabase/server";
 import { qrSvg, siteOrigin } from "@/lib/share";
@@ -82,6 +83,7 @@ export default async function Control({ params }: { params: Promise<{ id: string
           <div className="row wrap" style={{ gap: 8 }}>
             <Link href={`/staff/torneo/${t.id}/vista-previa`} className="btn s"><Icon name="eye" size={18} />Ver vista previa</Link>
             <ActionButton action={publishTournament} args={[t.id]} ok="Publicado." confirm={publishConfirm(t)}>Publicar torneo</ActionButton>
+            <DeleteTournament id={t.id} name={t.name} />
           </div>
         </div>
       )}
@@ -183,7 +185,12 @@ export default async function Control({ params }: { params: Promise<{ id: string
           <Link href={`/torneo/${t.code}?pestana=tabla`} className="btn p">Ver la tabla final</Link>
         </div>
       )}
-      {t.status === "cancelled" && <div className="banner err n4">Torneo cancelado.</div>}
+      {t.status === "cancelled" && (
+        <div className="row wrap" style={{ gap: 10, alignItems: "center" }}>
+          <div className="banner err n4 grow"><Icon name="x" size={18} />Torneo cancelado.{t.current_round > 0 ? " Ya tuvo rondas: se queda en el historial." : ""}</div>
+          {t.current_round === 0 && <DeleteTournament id={t.id} name={t.name} />}
+        </div>
+      )}
     </>
   );
 }

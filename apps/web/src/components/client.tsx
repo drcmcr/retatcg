@@ -1,7 +1,7 @@
 "use client";
 // Piezas de cliente compartidas: avisos flotantes, botones de acción y refresco en tiempo real.
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Icon } from "@/components/Icon";
 
@@ -46,7 +46,11 @@ export function useAction() {
         start(async () => {
           let r: Result;
           // Sin conexión o con el servidor caído la acción lanza: también se avisa.
-          try { r = await fn(); } catch { r = { ok: false, error: "No hubo conexión con el servidor. Revisa tu internet e inténtalo de nuevo." }; }
+          try { r = await fn(); } catch (e) {
+            // Las redirecciones de Next llegan como error: deben seguir su camino para que la pantalla cambie.
+            unstable_rethrow(e);
+            r = { ok: false, error: "No hubo conexión con el servidor. Revisa tu internet e inténtalo de nuevo." };
+          }
           if (!r.ok) toast({ tone: "err", text: r.error });
           else {
             if (opts.ok) toast({ tone: "ok", text: opts.ok });

@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { callCore, callRpc, type ActionResult } from "@/lib/server-action";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export async function createTournament(payload: Record<string, unknown>, publish: boolean): Promise<ActionResult> {
   const r = await callRpc<string>("create_tournament", { p: payload });
@@ -15,6 +16,23 @@ export async function updateTournament(id: string, payload: Record<string, unkno
 export async function publishTournament(id: string) { return callRpc<string>("publish_tournament", { p_id: id }); }
 export async function approveTournament(id: string, approve: boolean) { return callRpc("approve_tournament", { p_id: id, p_approve: approve }); }
 export async function cancelTournament(id: string) { return callRpc("cancel_tournament", { p_id: id }); }
+
+/** Elimina un borrador o un cancelado que nunca se jugó: primero sus capturas de mazo, luego el torneo. */
+export async function deleteTournament(id: string): Promise<ActionResult> {
+  const supabase = await supabaseServer();
+  const { data: ok } = await supabase.rpc("_can_delete_tournament", { p_id: id });
+  if (ok) {
+    const bucket = supabase.storage.from("capturas");
+    const { data: folders } = await bucket.list(id, { limit: 1000 });
+    const paths: string[] = [];
+    for (const f of folders ?? []) {
+      const { data: files } = await bucket.list(`${id}/${f.name}`, { limit: 1000 });
+      for (const x of files ?? []) paths.push(`${id}/${f.name}/${x.name}`);
+    }
+    if (paths.length) await bucket.remove(paths);
+  }
+  return callRpc("delete_tournament", { p_id: id });
+}
 export async function startTournament(id: string) { return callCore("start", id); }
 export async function nextRound(id: string) { return callCore("next", id); }
 export async function setAnnouncement(id: string, text: string) { return callRpc("set_announcement", { p_tournament: id, p_text: text }); }

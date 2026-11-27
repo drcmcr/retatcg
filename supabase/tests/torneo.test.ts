@@ -437,3 +437,48 @@ describe("invitaciones personales", () => {
     expect((await inv()).find((i) => i.label === "Luis")!.status).toBe("expired");
   });
 });
+
+describe("eliminar torneos", () => {
+  it("solo el organizador borra borradores o cancelados que nunca se jugaron", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const otro = await newUser("ajeno1");
+    const nuevo = async (name: string) => (await as(org, (tx) => tx`select public.create_tournament(${sql.json({
+      name, category: "casual", format: "swiss", swiss_rounds: 1, capacity: 8,
+      starts_at: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+    })}) as id`))[0]!.id as string;
+    const existe = async (id: string) => (await sql`select count(*)::int as n from public.tournaments where id = ${id}`)[0]!.n === 1;
+
+    // Borrador: se elimina, pero no lo puede eliminar alguien que no es su organizador.
+    const borrador = await nuevo("Borrador Uno");
+    await expect(as(otro, (tx) => tx`select public.delete_tournament(${borrador})`)).rejects.toThrow(/Solo el organizador/);
+    await as(org, (tx) => tx`select public.delete_tournament(${borrador})`);
+    expect(await existe(borrador)).toBe(false);
+
+    // Publicado: hay que cancelarlo primero; luego se elimina con sus inscripciones y avisos.
+    const publicado = await nuevo("Copa Cancelada");
+    await as(org, (tx) => tx`select public.publish_tournament(${publicado})`);
+    await as(otro, (tx) => tx`select public.register(${publicado})`);
+    await expect(as(org, (tx) => tx`select public.delete_tournament(${publicado})`)).rejects.toThrow(/Cancélalo primero/);
+    await as(org, (tx) => tx`select public.cancel_tournament(${publicado})`);
+    const [{ code }] = await sql`select code from public.tournaments where id = ${publicado}`;
+    expect((await sql`select count(*)::int as n from public.notifications where link = ${"/torneo/" + code}`)[0]!.n).toBeGreaterThan(0);
+    await as(org, (tx) => tx`select public.delete_tournament(${publicado})`);
+    expect(await existe(publicado)).toBe(false);
+    expect((await sql`select count(*)::int as n from public.registrations where tournament_id = ${publicado}`)[0]!.n).toBe(0);
+    expect((await sql`select count(*)::int as n from public.notifications where link = ${"/torneo/" + code}`)[0]!.n).toBe(0);
+    expect((await sql`select count(*)::int as n from public.audit_log where action = 'Eliminó el torneo' and detail->>'codigo' = ${code}`)[0]!.n).toBe(1);
+
+    // Uno que ya tuvo rondas se queda aunque esté cancelado.
+    const jugado = await nuevo("Copa Jugada");
+    await as(org, (tx) => tx`select public.publish_tournament(${jugado})`);
+    const p2 = await newUser("ajeno2");
+    for (const u of [otro, p2]) {
+      await as(u, (tx) => tx`select public.register(${jugado})`);
+      await sql`update public.registrations set status = 'checked_in' where tournament_id = ${jugado} and user_id = ${u}`;
+    }
+    await startTournament(sql, jugado, org);
+    await as(org, (tx) => tx`select public.cancel_tournament(${jugado})`);
+    await expect(as(org, (tx) => tx`select public.delete_tournament(${jugado})`)).rejects.toThrow(/historial/);
+    expect(await existe(jugado)).toBe(true);
+  });
+});
