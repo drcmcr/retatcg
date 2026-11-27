@@ -13,6 +13,7 @@ import { describeRestrictions } from "@/lib/restrictions";
 import { loadRegs, loadRounds, loadTournamentByCode, regName, standings } from "@/lib/tournament";
 import { supabaseServer } from "@/lib/supabase/server";
 import { EnrollActions } from "./EnrollActions";
+import { PushNudge } from "@/components/Push";
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
   const t = await loadTournamentByCode((await params).code);
@@ -197,6 +198,8 @@ export default async function Torneo({ params, searchParams }: { params: Promise
       <p className="xs" style={{ color: "var(--ink-3)" }}>
         Torneo organizado por {t.club ? `${t.club}` : "su organizador"}, no por Reta. Reta y este torneo no están afiliados, patrocinados ni aprobados por The Pokémon Company ni Nintendo. Los premios los entrega quien organiza. <Link href="/legal/terminos" className="cyan">Términos</Link>
       </p>
+
+      {!preview && mine && ["registered", "checked_in", "waitlist"].includes(mine.status) && ["registration", "running"].includes(t.status) && <PushNudge />}
 
       <div className="stick-bottom col" style={{ gap: 10, marginTop: "auto" }}>
         {preview ? (

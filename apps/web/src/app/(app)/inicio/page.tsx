@@ -9,6 +9,7 @@ import { daysUntil, fmtDateTime } from "@/lib/format";
 import { PACE_LABEL } from "@/lib/game";
 import { unreadCount, whatsNow } from "@/lib/queries";
 import { supabaseServer } from "@/lib/supabase/server";
+import { PushNudge } from "@/components/Push";
 
 export const metadata = { title: "Inicio" };
 
@@ -51,6 +52,8 @@ export default async function Inicio() {
           </div>
         </Empty>
       ) : (
+        <>
+        <PushNudge />
         <section className="col" aria-labelledby="tus-torneos">
           <div className="row between">
             <h2 id="tus-torneos" className="lbl" style={{ margin: 0 }}>Tus torneos</h2>
@@ -74,6 +77,7 @@ export default async function Inicio() {
             ))}
           </div>
         </section>
+        </>
       )}
       {me.season && (
         <section className="col" style={{ gap: 6 }}>

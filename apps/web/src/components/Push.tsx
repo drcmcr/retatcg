@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { deletePush, pushPublicKey, savePush } from "@/actions/profile";
 import { useToast } from "@/components/client";
 import { Icon } from "@/components/Icon";
@@ -69,5 +70,53 @@ export function PushToggle() {
       <span className="grow"><span className="ttl">Avisos en este teléfono</span><span className="xs">{label}</span></span>
       <span className={state === "on" ? "ok" : "muted"}><Icon name={state === "on" ? "check" : "right"} size={20} /></span>
     </button>
+  );
+}
+
+/** Invitación a activar los avisos para quien está inscrito en un torneo y no los tiene en este teléfono. */
+export function PushNudge() {
+  const [state, setState] = usePushState();
+  const toast = useToast();
+  const [hidden, setHidden] = useState(true);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let until = 0;
+    try { until = Number(localStorage.getItem("reta:aviso-push-oculto") ?? 0); } catch { /* sin almacenamiento */ }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- se decide al montar según lo que el jugador ocultó
+    setHidden(Date.now() < until);
+  }, []);
+  if (hidden || !["off", "needs-install", "denied"].includes(state)) return null;
+  const hide = () => {
+    try { localStorage.setItem("reta:aviso-push-oculto", String(Date.now() + 24 * 3_600_000)); } catch { /* nada */ }
+    setHidden(true);
+  };
+  return (
+    <div className="box n4 col" role="region" aria-label="Activar avisos" style={{ gap: 10 }}>
+      <span className="row" style={{ gap: 10, alignItems: "flex-start" }}>
+        <Icon name="bell" size={22} />
+        <span className="col" style={{ gap: 4 }}>
+          <b>Activa los avisos en este teléfono</b>
+          <span className="sm">
+            {state === "denied"
+              ? "Los bloqueaste en el navegador. Permite las notificaciones de retatcg.vercel.app en la configuración del navegador para que te llegue el check-in y tu mesa."
+              : state === "needs-install"
+                ? "En iPhone primero instala Reta en tu pantalla de inicio. Así te llega el check-in y tu mesa aunque no tengas la app abierta."
+                : "Así te llega el recordatorio, la apertura del check-in y tu mesa con el rival, aunque no tengas la app abierta."}
+          </span>
+        </span>
+      </span>
+      <div className="row wrap" style={{ gap: 8 }}>
+        {state === "off" && (
+          <button className="btn p sm" disabled={busy} onClick={async () => {
+            setBusy(true);
+            const err = await enablePush().catch(() => "No se pudieron activar. Inténtalo desde Ajustes.");
+            setBusy(false);
+            if (err) toast({ tone: "err", text: err }); else { setState("on"); toast({ tone: "ok", text: "Avisos activados." }); }
+          }}><Icon name="bell" size={18} />{busy ? "Activando…" : "Activar avisos"}</button>
+        )}
+        {state === "needs-install" && <Link className="btn p sm" href="/instalar"><Icon name="dl" size={18} />Cómo instalar</Link>}
+        <button className="btn g sm" onClick={hide}>Ahora no</button>
+      </div>
+    </div>
   );
 }

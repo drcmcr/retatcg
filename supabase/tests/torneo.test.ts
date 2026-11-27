@@ -482,3 +482,14 @@ describe("eliminar torneos", () => {
     expect(await existe(jugado)).toBe(true);
   });
 });
+
+describe("correos", () => {
+  it("al crear la cuenta se forma la bienvenida una sola vez, con espera", async () => {
+    const u = await newUser("correo1");
+    const rows = await sql`select kind, status, send_after > now() + interval '2 minutes' as espera from public.email_outbox where user_id = ${u}`;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: "bienvenida", status: "pending", espera: true });
+    // Nadie de la app la ve.
+    expect(await as(u, (tx) => tx`select * from public.email_outbox`).catch((e) => String(e))).toMatch(/permission denied/);
+  });
+});
