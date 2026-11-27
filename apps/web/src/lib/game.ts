@@ -66,3 +66,19 @@ export function formatLabel(t: { format: string; swiss_rounds: number; top_cut: 
 }
 
 export const CASE_KIND: Record<string, string> = { marcador: "Marcador", ausente: "Rival ausente", desconexion: "Desconexión", conducta: "Conducta", juez: "Llamada al juez", plazo: "Plazo vencido" };
+
+type LockFields = { category: string; format: string; swiss_rounds: number; top_cut: number; swiss_best_of: number; top_best_of: number; deck_policy: string; restrictions?: Record<string, unknown> | null };
+
+/** Lo que queda fijo al publicar (la base de datos lo rechaza después): se muestra y se confirma antes. */
+export function lockedOnPublish(t: LockFields): string[] {
+  const restr = t.restrictions && Object.keys(t.restrictions).length > 0;
+  return [
+    `Categoría: ${CATEGORY[t.category]?.label ?? t.category}`,
+    `Formato: ${formatLabel(t)}`,
+    `Mazo: ${DECK_LABEL[t.deck_policy] ?? t.deck_policy}${restr ? " con restricciones" : ""}`,
+  ];
+}
+
+export function publishConfirm(t: LockFields): string {
+  return `¿Publicar el torneo?\n\nDespués de publicarlo ya NO se pueden cambiar:\n• ${lockedOnPublish(t).join("\n• ")}\n\nLo demás (fecha, cupo, notas, premios) sí se puede editar mientras la inscripción esté abierta.`;
+}

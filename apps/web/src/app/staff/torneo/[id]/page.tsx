@@ -3,7 +3,7 @@ import { ActionButton, Countdown, LiveRefresh } from "@/components/client";
 import { Icon } from "@/components/Icon";
 import { Stat } from "@/components/ui";
 import { cancelTournament, nextRound, publishTournament, roundClock, staffMatch, startTournament } from "@/actions/staff";
-import { CATEGORY, PACE_LABEL, formatLabel } from "@/lib/game";
+import { CATEGORY, PACE_LABEL, formatLabel, lockedOnPublish, publishConfirm } from "@/lib/game";
 import { fmtDateTime } from "@/lib/format";
 import { requireTournamentStaff } from "@/lib/staff";
 import { loadRegs, loadRounds, regName } from "@/lib/tournament";
@@ -74,9 +74,14 @@ export default async function Control({ params }: { params: Promise<{ id: string
         <div className="box n6 col" style={{ gap: 10, maxWidth: 560 }}>
           <b className="t2">Borrador</b>
           <span className="sm">Nadie lo ve todavía. Revisa la vista previa antes de publicar. Al publicarlo se abre la inscripción{["clasificatorio", "mayor"].includes(t.category) ? " (o se pide aprobación al superadmin)" : ""}.</span>
+          <div className="banner warn n4 col" style={{ alignItems: "flex-start", gap: 6 }}>
+            <span className="row" style={{ gap: 8 }}><Icon name="warn" size={18} /><b>Al publicar ya no se pueden cambiar:</b></span>
+            <ul className="sm" style={{ margin: 0, paddingLeft: 22 }}>{lockedOnPublish(t).map((l) => <li key={l}>{l}</li>)}</ul>
+            <span className="xs">Si algo no está bien, cámbialo en Editar antes de publicar. Fecha, cupo, notas y premios sí se pueden editar después.</span>
+          </div>
           <div className="row wrap" style={{ gap: 8 }}>
             <Link href={`/staff/torneo/${t.id}/vista-previa`} className="btn s"><Icon name="eye" size={18} />Ver vista previa</Link>
-            <ActionButton action={publishTournament} args={[t.id]} ok="Publicado.">Publicar torneo</ActionButton>
+            <ActionButton action={publishTournament} args={[t.id]} ok="Publicado." confirm={publishConfirm(t)}>Publicar torneo</ActionButton>
           </div>
         </div>
       )}
