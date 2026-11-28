@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { Empty } from "@/components/ui";
+import { Empty, Status } from "@/components/ui";
 import { ActionButton } from "@/components/client";
 import { deleteTournament } from "@/actions/staff";
 import { requireStaffArea, myStaffTournaments } from "@/lib/staff";
@@ -10,9 +10,15 @@ import { supabaseServer } from "@/lib/supabase/server";
 
 export const metadata = { title: "Mis torneos" };
 
-const STATUS: Record<string, [string, string]> = {
-  draft: ["Borrador", "o"], pending_approval: ["Esperando aprobación", "o"], registration: ["Inscripción abierta", "c"],
-  running: ["En curso", "l"], finished: ["Terminado", "o"], cancelled: ["Cancelado", "e"],
+type Tone = Parameters<typeof Status>[0]["tone"];
+// Estado del torneo: siempre color + ícono + texto.
+const STATUS: Record<string, { label: string; tone: Tone; icon: Parameters<typeof Icon>[0]["name"] }> = {
+  draft: { label: "Borrador", tone: "muted", icon: "edit" },
+  pending_approval: { label: "Esperando aprobación", tone: "warn", icon: "clock" },
+  registration: { label: "Inscripción abierta", tone: "cyan", icon: "ticket" },
+  running: { label: "En curso", tone: "ok", icon: "play" },
+  finished: { label: "Terminado", tone: "muted", icon: "trophy" },
+  cancelled: { label: "Cancelado", tone: "err", icon: "x" },
 };
 
 export default async function StaffHome({ searchParams }: { searchParams: Promise<{ estado?: string }> }) {
@@ -44,32 +50,47 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
       {filtered.length === 0 ? (
         <Empty icon="trophy" title="Aún no tienes torneos">{me.isOrganizer && <Link className="btn p" href="/staff/crear">Crear el primero</Link>}</Empty>
       ) : (
-        <table className="tbl stack" style={{ fontSize: 15 }}>
-          <thead><tr><th>Torneo</th><th>Estado</th><th>Ritmo</th><th>Fecha</th><th className="r">Jugadores</th><th></th></tr></thead>
-          <tbody>
-            {filtered.map((t) => {
-              const [label, pill] = STATUS[t.status]!;
-              return (
-                <tr key={t.id}>
-                  <td className="lead" style={{ fontWeight: 700 }}>{t.name}<div className="xs">{CATEGORY[t.category]?.label}</div></td>
-                  <td data-label="Estado"><span className={`pill ${pill}`}>{label}{t.status === "running" ? ` · R${t.current_round}` : ""}</span></td>
-                  <td data-label="Ritmo">{PACE_LABEL[t.pace.kind]}</td>
-                  <td data-label="Fecha" className="nw">{fmtDateTime(t.starts_at)}</td>
-                  <td data-label="Jugadores" className="r mono">{counts.get(t.id) ?? 0} / {t.capacity}</td>
-                  <td className="r act">
-                    {["draft", "cancelled"].includes(t.status) && t.current_round === 0 && (roleOf.get(t.id) === "organizer" || me.isSuperadmin) && (
-                      <ActionButton className="btn d sm" action={deleteTournament} args={[t.id]} ok="Torneo eliminado."
-                        confirm={`¿Eliminar "${t.name}"? Se borra con sus inscripciones e invitaciones y no se puede deshacer.`}>
-                        <Icon name="trash" size={18} />Eliminar
-                      </ActionButton>
+        <div className="col" style={{ gap: 8 }}>
+          {filtered.map((t) => {
+            const st = STATUS[t.status]!;
+            const canDelete = ["draft", "cancelled"].includes(t.status) && t.current_round === 0 && (roleOf.get(t.id) === "organizer" || me.isSuperadmin);
+            return (
+              <div key={t.id} className="trow n4">
+                <details className="reg">
+                  <summary>
+                    <span className="grow" style={{ minWidth: 0 }}>
+                      <span className="ttl">{t.name}</span>
+                      <span className="row wrap reg-st">
+                        <Status tone={st.tone} icon={st.icon}>{st.label}{t.status === "running" ? ` · R${t.current_round}` : ""}</Status>
+                        <span className="xs">{fmtDateTime(t.starts_at)}</span>
+                        <span className="xs mono">{counts.get(t.id) ?? 0}/{t.capacity}</span>
+                      </span>
+                    </span>
+                    <span className="reg-chev" aria-hidden="true"><Icon name="right" size={20} /></span>
+                  </summary>
+                  <div className="reg-body col">
+                    <dl className="reg-dl">
+                      <dt>Categoría</dt><dd>{CATEGORY[t.category]?.label ?? t.category}</dd>
+                      <dt>Ritmo</dt><dd>{PACE_LABEL[t.pace.kind]}</dd>
+                      <dt>Fecha</dt><dd>{fmtDateTime(t.starts_at)}</dd>
+                      <dt>Jugadores</dt><dd className="mono">{counts.get(t.id) ?? 0} / {t.capacity}</dd>
+                      <dt>Tu rol</dt><dd>{roleOf.get(t.id) === "judge" ? "Juez" : "Organizador"}</dd>
+                    </dl>
+                    {canDelete && (
+                      <div className="row wrap" style={{ gap: 8 }}>
+                        <ActionButton className="btn d sm" action={deleteTournament} args={[t.id]} ok="Torneo eliminado."
+                          confirm={`¿Eliminar "${t.name}"? Se borra con sus inscripciones e invitaciones y no se puede deshacer.`}>
+                          <Icon name="trash" size={18} />Eliminar
+                        </ActionButton>
+                      </div>
                     )}
-                    <Link className="btn p sm" href={`/staff/torneo/${t.id}`}>{t.status === "running" ? "Abrir panel" : "Abrir"}<Icon name="right" size={18} /></Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </details>
+                <Link className="btn p sm trow-open" href={`/staff/torneo/${t.id}`} aria-label={`Abrir ${t.name}`}>{t.status === "running" ? "Panel" : "Abrir"}<Icon name="right" size={18} /></Link>
+              </div>
+            );
+          })}
+        </div>
       )}
     </>
   );

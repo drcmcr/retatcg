@@ -400,3 +400,8 @@ a.li:hover, button.li:hover { background: #22222C; }
 .reg-dl dt { font: 400 15px/1.3 var(--f-px); text-transform: uppercase; color: var(--ink-2); }
 .reg-dl dd { margin: 0; text-align: right; }
 @media (prefers-reduced-motion: reduce) { .reg-chev { transition: none; } }
+
+/* Fila de torneo: desplegable con el botón Abrir siempre a la vista */
+.trow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; background: var(--surface); }
+.trow > .reg { background: transparent; }
+.trow-open { margin: 12px 12px 0 0; }
