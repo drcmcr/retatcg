@@ -77,7 +77,7 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
                       <dt>Tu rol</dt><dd>{roleOf.get(t.id) === "judge" ? "Juez" : "Organizador"}</dd>
                     </dl>
                     {canDelete && (
-                      <div className="row wrap" style={{ gap: 8 }}>
+                      <div className="reg-actions">
                         <ActionButton className="btn d sm" action={deleteTournament} args={[t.id]} ok="Torneo eliminado."
                           confirm={`¿Eliminar "${t.name}"? Se borra con sus inscripciones e invitaciones y no se puede deshacer.`}>
                           <Icon name="trash" size={18} />Eliminar

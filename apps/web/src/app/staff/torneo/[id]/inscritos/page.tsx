@@ -107,12 +107,12 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
                   <dt>Asistencia</dt><dd className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</dd>
                   {invitedAs.has(r.id) && <><dt>Invitación</dt><dd>{invitedAs.get(r.id)}</dd></>}
                 </dl>
-                <div className="row wrap" style={{ gap: 8 }}>
-                  {showDeck && deckHref(r) && <a className="btn s sm" href={deckHref(r)!}>Revisar mazo</a>}
-                  {r.status === "registered" && t.status === "registration" && <ActionButton className="btn s sm" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}
-                  {canMove && r.status === "registered" && <ActionButton className="btn g sm" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera.">Pasar a espera</ActionButton>}
-                  {canMove && r.status === "waitlist" && <ActionButton className="btn p sm" action={staffMove} args={[r.id, "registered"]} ok="Ya tiene lugar.">Dar lugar</ActionButton>}
-                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="btn d sm" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
+                <div className="reg-actions">
+                  {canMove && r.status === "waitlist" && <ActionButton className="btn p sm" action={staffMove} args={[r.id, "registered"]} ok="Ya tiene lugar."><Icon name="ticket" size={18} />Dar lugar</ActionButton>}
+                  {r.status === "registered" && t.status === "registration" && <ActionButton className="btn c sm" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho."><Icon name="check" size={18} />Hacer check-in</ActionButton>}
+                  {showDeck && deckHref(r) && <a className="btn v sm" href={deckHref(r)!}><Icon name="eye" size={18} />Revisar mazo</a>}
+                  {canMove && r.status === "registered" && <ActionButton className="btn w sm" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera."><Icon name="clock" size={18} />Pasar a espera</ActionButton>}
+                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="btn d sm" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo."><Icon name={t.status === "running" ? "out" : "x"} size={18} />{t.status === "running" ? "Retirar del torneo" : "Quitar del torneo"}</ActionButton>}
                 </div>
               </div>
             </details>
