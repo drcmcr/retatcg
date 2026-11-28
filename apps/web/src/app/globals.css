@@ -385,3 +385,18 @@ a.li:hover, button.li:hover { background: #22222C; }
 .picker-opt.off { cursor: not-allowed; opacity: .75; }
 .picker-opt .pill { background: var(--card); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); }
 .picker-empty { padding: 12px 10px; font-size: 14px; color: var(--ink-2); }
+
+/* Filas desplegables (Inscritos) */
+.reg { background: var(--surface); }
+.reg > summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; cursor: pointer; }
+.reg > summary::-webkit-details-marker { display: none; }
+.reg > summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.reg .ttl { display: block; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reg-st { gap: 4px 12px; margin-top: 3px; font-size: 13px; }
+.reg-chev { display: grid; place-items: center; width: 32px; height: 32px; color: var(--ink-2); transition: transform .15s; }
+.reg[open] .reg-chev { transform: rotate(90deg); }
+.reg-body { gap: 12px; padding: 4px 14px 16px; border-top: 1px solid var(--line-soft); }
+.reg-dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 10px 0 0; }
+.reg-dl dt { font: 400 15px/1.3 var(--f-px); text-transform: uppercase; color: var(--ink-2); }
+.reg-dl dd { margin: 0; text-align: right; }
+@media (prefers-reduced-motion: reduce) { .reg-chev { transition: none; } }

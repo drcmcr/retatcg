@@ -1,7 +1,7 @@
 import { ActionButton, LiveRefresh } from "@/components/client";
 import { Identicon } from "@/components/Identicon";
 import { Status } from "@/components/ui";
-import type { IconName } from "@/components/Icon";
+import { Icon, type IconName } from "@/components/Icon";
 import { removeStaff, staffMove, staffRegistration } from "@/actions/staff";
 import { now } from "@/lib/time";
 import { RANK_NAMES } from "@/lib/ranks";
@@ -60,8 +60,12 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
     if (!r.user_id || ["dropped", "no_show", "removed"].includes(r.status)) return "—";
     const d = DECK[deckOf.get(r.id) ?? "none"];
     const label = deckPolicy === "por_ronda" ? `R${deckRound} · ${d.label}` : d.label;
-    const st = <Status tone={d.tone} icon={d.icon}>{label}</Status>;
-    return deckOf.has(r.id) && d !== DECK.approved ? <a href={`/staff/torneo/${t.id}/mazos?estado=${deckOf.get(r.id)}`} style={{ textDecoration: "none" }}>{st}</a> : st;
+    return <Status tone={d.tone} icon={d.icon}>{label}</Status>;
+  };
+  // Mazo por revisar o con infracción: enlace a Revisar mazos (fuera del encabezado desplegable).
+  const deckHref = (r: (typeof regs)[number]) => {
+    const st = deckOf.get(r.id);
+    return st && st !== "approved" ? `/staff/torneo/${t.id}/mazos?estado=${st}` : null;
   };
   // Reacomodar lugares solo antes de que abra el check-in.
   const canMove = t.status === "registration" && now() < new Date(t.starts_at).getTime() - t.checkin_minutes * 60_000;
@@ -75,27 +79,46 @@ export default async function Inscritos({ params }: { params: Promise<{ id: stri
       <LiveRefresh channel={`ins-${t.id}`} watch={[{ table: "registrations", filter: `tournament_id=eq.${t.id}` }]} />
       <h1 className="t1">Inscritos</h1>
       <div className="grid2">
-        <table className="tbl stack" style={{ fontSize: 15 }}>
-          <thead><tr><th>Jugador</th><th>Rango</th><th>Asistencia</th><th>Estado</th>{showDeck && <th>Mazo</th>}<th></th></tr></thead>
-          <tbody>
-            {regs.map((r) => (
-              <tr key={r.id}>
-                <td className="lead"><span className="row" style={{ gap: 8 }}><Identicon seed={r.user_id ?? r.id} size={24} /><b>{regName(r)}</b>{!r.user_id && <span className="xs">invitado</span>}{invitedAs.has(r.id) && <span className="xs cyan">invitación: {invitedAs.get(r.id)}</span>}</span></td>
-                <td data-label="Rango">{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</td>
-                <td data-label="Asistencia" className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</td>
-                <td data-label="Estado">{ST[r.status] ? <Status tone={ST[r.status].tone} icon={ST[r.status].icon}>{ST[r.status].label}</Status> : r.status}</td>
-                {showDeck && <td data-label="Mazo">{deckCell(r)}</td>}
-                <td className="r nw act">
-                  {r.status === "registered" && t.status === "registration" && <ActionButton className="link" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}{" "}
-                  {canMove && r.status === "registered" && <ActionButton className="link" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera.">Pasar a espera</ActionButton>}{" "}
-                  {canMove && r.status === "waitlist" && <ActionButton className="link" action={staffMove} args={[r.id, "registered"]} ok="Ya tiene lugar.">Dar lugar</ActionButton>}{" "}
-                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="link" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
-                </td>
-              </tr>
-            ))}
-            {!regs.length && <tr><td colSpan={showDeck ? 6 : 5} className="sm">Aún no hay inscritos.</td></tr>}
-          </tbody>
-        </table>
+        <div className="col" style={{ gap: 8 }}>
+          {regs.length > 0 && (
+            <p className="xs" style={{ margin: 0 }}>
+              {regs.filter((r) => ["registered", "checked_in"].includes(r.status)).length} con lugar
+              {regs.some((r) => r.status === "waitlist") && ` · ${regs.filter((r) => r.status === "waitlist").length} en espera`}
+              {showDeck && ` · ${regs.filter((r) => r.user_id && !["dropped", "no_show"].includes(r.status) && !deckOf.has(r.id)).length} sin mazo`}
+              {" "}· Toca a un jugador para ver más.
+            </p>
+          )}
+          {regs.map((r) => (
+            <details key={r.id} className="reg n4">
+              <summary>
+                <Identicon seed={r.user_id ?? r.id} size={32} />
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <span className="ttl">{regName(r)}{!r.user_id && <span className="xs"> · invitado</span>}</span>
+                  <span className="row wrap reg-st">
+                    {ST[r.status] ? <Status tone={ST[r.status].tone} icon={ST[r.status].icon}>{ST[r.status].label}</Status> : r.status}
+                    {showDeck && deckCell(r) !== "—" && <span className="row" style={{ gap: 4 }}><span className="xs">Mazo:</span>{deckCell(r)}</span>}
+                  </span>
+                </span>
+                <span className="reg-chev" aria-hidden="true"><Icon name="right" size={20} /></span>
+              </summary>
+              <div className="reg-body col">
+                <dl className="reg-dl">
+                  <dt>Rango</dt><dd>{r.user_id ? RANK_NAMES[Math.min(5, Math.floor((pr.get(r.user_id) ?? 0) / 300))] : "—"}</dd>
+                  <dt>Asistencia</dt><dd className={r.user_id && (attendance.get(r.user_id)?.no_shows ?? 0) > 0 ? "warn" : undefined}>{r.user_id ? attLabel(r.user_id) : "—"}</dd>
+                  {invitedAs.has(r.id) && <><dt>Invitación</dt><dd>{invitedAs.get(r.id)}</dd></>}
+                </dl>
+                <div className="row wrap" style={{ gap: 8 }}>
+                  {showDeck && deckHref(r) && <a className="btn s sm" href={deckHref(r)!}>Revisar mazo</a>}
+                  {r.status === "registered" && t.status === "registration" && <ActionButton className="btn s sm" action={staffRegistration} args={[r.id, "checkin"]} ok="Check-in hecho.">Hacer check-in</ActionButton>}
+                  {canMove && r.status === "registered" && <ActionButton className="btn g sm" action={staffMove} args={[r.id, "waitlist"]} confirm={`¿Pasar a ${regName(r)} a la lista de espera? Le llega un aviso.`} ok="Pasó a lista de espera.">Pasar a espera</ActionButton>}
+                  {canMove && r.status === "waitlist" && <ActionButton className="btn p sm" action={staffMove} args={[r.id, "registered"]} ok="Ya tiene lugar.">Dar lugar</ActionButton>}
+                  {!["dropped", "no_show"].includes(r.status) && <ActionButton className="btn d sm" action={staffRegistration} args={[r.id, "remove"]} confirm={`¿Quitar a ${regName(r)}?`} ok="Listo.">{t.status === "running" ? "Retirar" : "Quitar"}</ActionButton>}
+                </div>
+              </div>
+            </details>
+          ))}
+          {!regs.length && <p className="sm">Aún no hay inscritos.</p>}
+        </div>
         <div className="col" style={{ gap: 12 }}>
           {["registration", "running"].includes(t.status) && <AddGuest id={t.id} />}
           <div className="box n4 col" style={{ gap: 8 }}>
