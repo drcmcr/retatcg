@@ -378,7 +378,8 @@ a.li:hover, button.li:hover { background: #22222C; }
 .tbl td.act > * + * { margin-left: 8px; }
 
 /* Buscador de jugadores (combobox) */
-.picker-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--line); max-height: 340px; overflow-y: auto; }
+/* En el flujo, no flotante: los contenedores con esquinas recortadas (.n4 usa clip-path) la escondían. */
+.picker-list { position: static; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--line); max-height: 340px; overflow-y: auto; }
 .picker-opt { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px; cursor: pointer; }
 .picker-opt .ttl { display: block; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
 .picker-opt.on, .picker-opt:hover { background: var(--card); box-shadow: inset 3px 0 0 var(--lime); }

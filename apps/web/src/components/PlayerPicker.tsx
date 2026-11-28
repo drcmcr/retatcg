@@ -19,6 +19,7 @@ export function PlayerPicker({ value, onChange, tournamentId, label, disableTake
   const [active, setActive] = useState(-1);
   const [searched, setSearched] = useState("");
   const seq = useRef(0);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     const q = value.trim();
@@ -42,9 +43,15 @@ export function PlayerPicker({ value, onChange, tournamentId, label, disableTake
   };
   const show = open && value.trim().length >= 2 && searched === value.trim();
   const listId = `${id}-lista`;
+  // Con el teclado abierto la lista puede quedar debajo: se acerca a la vista al aparecer o cambiar.
+  useEffect(() => {
+    if (!show) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    listRef.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [show, hits]);
 
   return (
-    <div className="picker" style={{ position: "relative", flex: 1, minWidth: 0 }}>
+    <div className="picker" style={{ flex: "1 1 220px", minWidth: 0 }}>
       <input
         className="inp" role="combobox" aria-label={label} aria-autocomplete="list" aria-expanded={show}
         aria-controls={listId} aria-activedescendant={show && active >= 0 ? `${id}-${active}` : undefined}
@@ -62,7 +69,7 @@ export function PlayerPicker({ value, onChange, tournamentId, label, disableTake
         }}
       />
       {show && (
-        <ul id={listId} role="listbox" aria-label="Jugadores" className="picker-list">
+        <ul ref={listRef} id={listId} role="listbox" aria-label="Jugadores" className="picker-list">
           {hits.length === 0 && <li className="picker-empty" role="option" aria-disabled="true" aria-selected="false">Ningún jugador con ese nombre</li>}
           {hits.map((h, i) => {
             const off = disableTaken && !!h.role;

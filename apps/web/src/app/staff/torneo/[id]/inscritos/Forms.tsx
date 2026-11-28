@@ -22,7 +22,7 @@ export function AddJudge({ id }: { id: string }) {
   const [name, setName] = useState("");
   const { run, pending } = useAction();
   return (
-    <div className="row" style={{ alignItems: "flex-start" }}>
+    <div className="row wrap" style={{ alignItems: "flex-start" }}>
       <PlayerPicker value={name} onChange={setName} tournamentId={id} label="Usuario del juez" disableTaken />
       <button className="btn g sm" disabled={pending || name.trim().length < 3} onClick={() => run(() => addStaff(id, name.trim(), "judge"), { ok: "Juez agregado.", then: () => setName("") })}>Invitar juez</button>
     </div>
