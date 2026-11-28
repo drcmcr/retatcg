@@ -63,7 +63,7 @@ export default async function StaffHome({ searchParams }: { searchParams: Promis
                         <Icon name="trash" size={18} />Eliminar
                       </ActionButton>
                     )}
-                    <Link className="btn s sm" href={`/staff/torneo/${t.id}`}>{t.status === "running" ? "Abrir panel" : "Abrir"}<Icon name="right" size={18} /></Link>
+                    <Link className="btn p sm" href={`/staff/torneo/${t.id}`}>{t.status === "running" ? "Abrir panel" : "Abrir"}<Icon name="right" size={18} /></Link>
                   </td>
                 </tr>
               );

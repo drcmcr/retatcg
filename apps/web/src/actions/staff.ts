@@ -15,6 +15,12 @@ export async function createTournament(payload: Record<string, unknown>, publish
 export async function updateTournament(id: string, payload: Record<string, unknown>) { return callRpc("update_tournament", { p_id: id, p: payload }); }
 export async function publishTournament(id: string) { return callRpc<string>("publish_tournament", { p_id: id }); }
 export async function approveTournament(id: string, approve: boolean) { return callRpc("approve_tournament", { p_id: id, p_approve: approve }); }
+export type PlayerHit = { id: string; username: string; rank_index: number; role: string | null };
+/** Sugerencias para dar roles (solo staff); la base valida quién puede buscar. */
+export async function searchPlayers(q: string, tournamentId?: string) {
+  return callRpc<PlayerHit[]>("search_players", { p_q: q, p_tournament: tournamentId ?? null });
+}
+
 export async function cancelTournament(id: string) { return callRpc("cancel_tournament", { p_id: id }); }
 
 /** Elimina un borrador o un cancelado que nunca se jugó: primero sus capturas de mazo, luego el torneo. */

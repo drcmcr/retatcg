@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { addGuest, addStaff } from "@/actions/staff";
+import { PlayerPicker } from "@/components/PlayerPicker";
 import { useAction } from "@/components/client";
 import { Icon } from "@/components/Icon";
 
@@ -21,8 +22,8 @@ export function AddJudge({ id }: { id: string }) {
   const [name, setName] = useState("");
   const { run, pending } = useAction();
   return (
-    <div className="row">
-      <input className="inp" value={name} onChange={(e) => setName(e.target.value)} placeholder="Usuario de Reta" aria-label="Usuario del juez" />
+    <div className="row" style={{ alignItems: "flex-start" }}>
+      <PlayerPicker value={name} onChange={setName} tournamentId={id} label="Usuario del juez" disableTaken />
       <button className="btn g sm" disabled={pending || name.trim().length < 3} onClick={() => run(() => addStaff(id, name.trim(), "judge"), { ok: "Juez agregado.", then: () => setName("") })}>Invitar juez</button>
     </div>
   );

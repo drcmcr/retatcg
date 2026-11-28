@@ -172,6 +172,9 @@ describe("torneo en vivo: suizo + top 4", () => {
     expect(r!.s).toBe("disputed");
     const [c] = await sql`select * from public.cases where match_id = ${m!.id}`;
     expect(c!.kind).toBe("marcador");
+    // El staff recibe aviso del caso aunque nadie haya tocado "Llamar juez".
+    const [aviso] = await sql`select title, link from public.notifications where user_id = ${org} and link like ${"%/casos/" + c!.id}`;
+    expect(aviso!.title).toMatch(/disputa de marcador/);
     await expect(as(org, (tx) => tx`select public.resolve_case(${c!.id}, 'x')`)).rejects.toThrow(/resultado/);
     await as(org, (tx) => tx`select public.staff_set_result(${m!.id}, 1, 0, 0, false, 'Captura del juego 1')`);
     // Poner el resultado cierra el caso de marcador; cerrarlo otra vez avisa que ya está resuelto.
@@ -491,5 +494,30 @@ describe("correos", () => {
     expect(rows[0]).toMatchObject({ kind: "bienvenida", status: "pending", espera: true });
     // Nadie de la app la ve.
     expect(await as(u, (tx) => tx`select * from public.email_outbox`).catch((e) => String(e))).toMatch(/permission denied/);
+  });
+});
+
+describe("buscador de jugadores", () => {
+  it("sugiere por inicio y luego por contenido, solo al staff y sin cuentas por borrar", async () => {
+    const org = (await sql`select id from public.profiles where username = 'bets'`)[0]!.id;
+    const a = await newUser("Elenita"); await newUser("Mikelo"); const gone = await newUser("Elvis9");
+    await sql`update public.profiles set deleting_at = now() + interval '7 days' where id = ${gone}`;
+    const rows = await as(org, (tx) => tx`select username, role, rank_index from public.search_players('el')`);
+    const names = rows.map((r) => r.username);
+    expect(names.indexOf("Elenita")).toBeLessThan(names.indexOf("Mikelo"));
+    expect(names).not.toContain("Elvis9");
+    expect(rows[0]!.rank_index).toBeTypeOf("number");
+    // Muy corto o con caracteres raros: nada.
+    expect(await as(org, (tx) => tx`select * from public.search_players('e')`)).toHaveLength(0);
+    expect(await as(org, (tx) => tx`select * from public.search_players('e%')`)).toHaveLength(0);
+    // Un jugador sin rol no puede recorrer la lista.
+    await expect(as(a, (tx) => tx`select * from public.search_players('el')`)).rejects.toThrow(/Solo el staff/);
+    // En un torneo marca quién ya es staff.
+    const id = (await as(org, (tx) => tx`select public.create_tournament(${sql.json({
+      name: "Copa Buscador", category: "casual", format: "swiss", swiss_rounds: 1, starts_at: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+    })}) as id`))[0]!.id;
+    await as(org, (tx) => tx`select public.add_staff(${id}, 'Elenita', 'judge')`);
+    const [j] = await as(org, (tx) => tx`select role from public.search_players('elen', ${id})`);
+    expect(j!.role).toBe("judge");
   });
 });
